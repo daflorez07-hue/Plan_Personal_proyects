@@ -1,0 +1,978 @@
+{
+  "config": {
+    "id": "main",
+    "planStart": "2026-09-25",
+    "planEnd": "2027-06-30",
+    "phases": {
+      "inmediato": {
+        "id": "inmediato",
+        "title": "Inmediato · antes del 2 de octubre",
+        "start": "2026-09-25",
+        "end": "2026-10-09",
+        "order": 1
+      },
+      "octubre": {
+        "id": "octubre",
+        "title": "Octubre 2026",
+        "start": "2026-10-01",
+        "end": "2026-10-31",
+        "order": 2
+      },
+      "novdic": {
+        "id": "novdic",
+        "title": "Noviembre – diciembre 2026",
+        "start": "2026-11-01",
+        "end": "2026-12-31",
+        "order": 3
+      },
+      "enemar": {
+        "id": "enemar",
+        "title": "Enero – marzo 2027",
+        "start": "2027-01-01",
+        "end": "2027-03-31",
+        "order": 4
+      },
+      "abrjun": {
+        "id": "abrjun",
+        "title": "Abril – junio 2027",
+        "start": "2027-04-01",
+        "end": "2027-06-30",
+        "order": 5
+      }
+    },
+    "phaseDatesNote": "Supuesto declarado: las fechas de inicio y fin de cada etapa se dedujeron de su título y de las fechas de sus actividades. Ajústalas aquí.",
+    "fronts": {
+      "ikm": {
+        "id": "ikm",
+        "name": "IKM",
+        "mode": "operar",
+        "order": 1,
+        "scope": "Trabajo actual, puntos de control y decisión"
+      },
+      "linkedin": {
+        "id": "linkedin",
+        "name": "LinkedIn",
+        "mode": "construir",
+        "order": 2,
+        "scope": "Marca de líder de datos e IA en energía: 2 piezas y 20 comentarios por semana"
+      },
+      "negocio": {
+        "id": "negocio",
+        "name": "Negocio propio",
+        "mode": "construir",
+        "order": 3,
+        "scope": "Suscripción \"Analógico a Digital\" y proyectos de ticket alto con IA"
+      },
+      "empleo": {
+        "id": "empleo",
+        "name": "Empleo",
+        "mode": "explorar",
+        "order": 4,
+        "scope": "Headhunters y decisores en operadoras y tecnología para energía"
+      },
+      "activos": {
+        "id": "activos",
+        "name": "Activos",
+        "mode": "operar",
+        "order": 5,
+        "scope": "Apartamentos con Cristian y portafolio de acciones"
+      },
+      "finca": {
+        "id": "finca",
+        "name": "Finca",
+        "mode": "explorar",
+        "order": 6,
+        "scope": "ALTAVERDE: selección de predio y validaciones"
+      },
+      "laboratorio": {
+        "id": "laboratorio",
+        "name": "Laboratorio",
+        "mode": "laboratorio",
+        "order": 7,
+        "scope": "Un proyecto de gusto por trimestre"
+      }
+    },
+    "kpis": [
+      {
+        "key": "fundadores",
+        "label": "Clientes fundadores pagando",
+        "target": 5,
+        "due": "2026-12-31",
+        "order": 1
+      },
+      {
+        "key": "suscriptores",
+        "label": "Suscriptores activos",
+        "target": 10,
+        "due": "2027-03-31",
+        "order": 2
+      },
+      {
+        "key": "conversaciones",
+        "label": "Conversaciones de ticket alto",
+        "target": 10,
+        "due": "2026-12-31",
+        "order": 3
+      },
+      {
+        "key": "ticketAlto",
+        "label": "Proyectos de ticket alto cerrados",
+        "target": 1,
+        "due": "2027-03-31",
+        "order": 4
+      },
+      {
+        "key": "headhunters",
+        "label": "Conversaciones con headhunters",
+        "target": 2,
+        "due": "2026-11-30",
+        "order": 5
+      },
+      {
+        "key": "publicaciones",
+        "label": "Piezas publicadas en LinkedIn",
+        "target": 48,
+        "due": "2027-03-31",
+        "order": 6
+      }
+    ],
+    "modeReview": {
+      "note": "",
+      "updatedAt": 0
+    }
+  },
+  "tasks": {
+    "t01": {
+      "id": "t01",
+      "title": "Definir condiciones y fechas de decisión con IKM: comisiones, más ventas y deuda cubierta · revisión 11–15 ene y 22–31 mar",
+      "phase": "inmediato",
+      "order": 1,
+      "front": "IKM",
+      "owner": "Tú",
+      "due": "2026-09-25",
+      "status": "hecha",
+      "note": "Decidido el 25 sep 2026.",
+      "blockCause": "",
+      "doneAt": "2026-09-25",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t02": {
+      "id": "t02",
+      "title": "Leer acuerdo de socios y contrato con IKM (no competencia y conflicto de interés)",
+      "phase": "inmediato",
+      "order": 2,
+      "front": "IKM",
+      "owner": "Tú",
+      "due": "2026-09-25",
+      "status": "hecha",
+      "note": "Revisado: sin restricciones que afecten el plan.",
+      "blockCause": "",
+      "doneAt": "2026-09-25",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t03": {
+      "id": "t03",
+      "title": "Definir los nichos de la suscripción",
+      "phase": "inmediato",
+      "order": 3,
+      "front": "Negocio propio",
+      "owner": "Tú + esposa",
+      "due": "2026-09-25",
+      "status": "hecha",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "2026-09-25",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t04": {
+      "id": "t04",
+      "title": "Cambiar el titular de LinkedIn por uno honesto (sin cargo de Chief Data Officer)",
+      "phase": "inmediato",
+      "order": 4,
+      "front": "LinkedIn",
+      "owner": "Tú",
+      "due": "2026-10-02",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t05": {
+      "id": "t05",
+      "title": "Bloquear la semana tipo en el calendario (horas creativas martes y jueves)",
+      "phase": "inmediato",
+      "order": 5,
+      "front": "LinkedIn",
+      "owner": "Tú",
+      "due": "2026-10-02",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t06": {
+      "id": "t06",
+      "title": "Pedir a Emilia la lista de 30 headhunters y 40 decisores",
+      "phase": "inmediato",
+      "order": 6,
+      "front": "Empleo",
+      "owner": "Tú + Emilia",
+      "due": "2026-10-02",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t07": {
+      "id": "t07",
+      "title": "Agendar con Cristian la conversación del acuerdo de implementaciones",
+      "phase": "inmediato",
+      "order": 7,
+      "front": "Negocio propio",
+      "owner": "Tú",
+      "due": "2026-10-02",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t08": {
+      "id": "t08",
+      "title": "Fijar con tu esposa la fecha en que sale a vender",
+      "phase": "inmediato",
+      "order": 8,
+      "front": "Negocio propio",
+      "owner": "Tú + esposa",
+      "due": "2026-10-02",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t09": {
+      "id": "t09",
+      "title": "Elegir el nombre de la empresa y verificar RUES, dominio .co y marca en la SIC",
+      "phase": "inmediato",
+      "order": 9,
+      "front": "Negocio propio",
+      "owner": "Tú",
+      "due": "2026-10-09",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t10": {
+      "id": "t10",
+      "title": "Completar y enviar la oferta a Language Solutions",
+      "phase": "inmediato",
+      "order": 10,
+      "front": "Negocio propio",
+      "owner": "Tú",
+      "due": "2026-10-09",
+      "status": "pendiente",
+      "note": "Completar los datos requeridos del borrador.",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t11": {
+      "id": "t11",
+      "title": "Firmar acuerdo escrito con Cristian: alcance, pago por proyecto y salida",
+      "phase": "octubre",
+      "order": 1,
+      "front": "Negocio propio",
+      "owner": "Tú + Cristian",
+      "due": "2026-10-16",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t12": {
+      "id": "t12",
+      "title": "Armar la oferta de clientes fundadores por nicho",
+      "phase": "octubre",
+      "order": 2,
+      "front": "Negocio propio",
+      "owner": "Tú + esposa",
+      "due": "2026-10-16",
+      "status": "pendiente",
+      "note": "Precio congelado, pago anticipado, permiso para medir resultados.",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t13": {
+      "id": "t13",
+      "title": "Decidir con contador la titularidad y régimen de la SAS de servicios y constituirla",
+      "phase": "octubre",
+      "order": 3,
+      "front": "Negocio propio",
+      "owner": "Tú + contador",
+      "due": "2026-10-31",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t14": {
+      "id": "t14",
+      "title": "Empezar el portafolio de negocios originados (solo información autorizada)",
+      "phase": "octubre",
+      "order": 4,
+      "front": "Empleo",
+      "owner": "Tú + Emilia",
+      "due": "2026-10-31",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t15": {
+      "id": "t15",
+      "title": "Optimizar perfil de Instagram y arrancar 2 piezas por semana",
+      "phase": "octubre",
+      "order": 5,
+      "front": "Negocio propio",
+      "owner": "Tú",
+      "due": "2026-10-31",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t16": {
+      "id": "t16",
+      "title": "5 clientes fundadores pagando",
+      "phase": "novdic",
+      "order": 1,
+      "front": "Negocio propio",
+      "owner": "Esposa",
+      "due": "2026-12-15",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t17": {
+      "id": "t17",
+      "title": "2 conversaciones con headhunters para conocer tu valor de mercado",
+      "phase": "novdic",
+      "order": 2,
+      "front": "Empleo",
+      "owner": "Tú",
+      "due": "2026-11-30",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t18": {
+      "id": "t18",
+      "title": "10 conversaciones de ticket alto fuera de energía",
+      "phase": "novdic",
+      "order": 3,
+      "front": "Negocio propio",
+      "owner": "Tú",
+      "due": "2026-12-15",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t19": {
+      "id": "t19",
+      "title": "Contrato de transmisión de datos y servidor en producción",
+      "phase": "novdic",
+      "order": 4,
+      "front": "Negocio propio",
+      "owner": "Tú + abogado",
+      "due": "2026-11-30",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t20": {
+      "id": "t20",
+      "title": "Finca: predio elegido o decisión de esperar",
+      "phase": "novdic",
+      "order": 5,
+      "front": "Finca",
+      "owner": "Tú + familia",
+      "due": "2026-12-15",
+      "status": "pendiente",
+      "note": "Un sábado al mes en campo: San Francisco, Supatá, Silvania.",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t21": {
+      "id": "t21",
+      "title": "Revisión 1 con IKM: comisiones, ventas y deuda",
+      "phase": "enemar",
+      "order": 1,
+      "front": "IKM",
+      "owner": "Tú",
+      "due": "2027-01-15",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t22": {
+      "id": "t22",
+      "title": "10 suscriptores activos",
+      "phase": "enemar",
+      "order": 2,
+      "front": "Negocio propio",
+      "owner": "Esposa",
+      "due": "2027-03-31",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t23": {
+      "id": "t23",
+      "title": "1 proyecto de ticket alto cerrado y ejecutándose",
+      "phase": "enemar",
+      "order": 3,
+      "front": "Negocio propio",
+      "owner": "Tú vendes · Cristian ejecuta",
+      "due": "2027-03-31",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t24": {
+      "id": "t24",
+      "title": "Constituir la SAS inmobiliaria con Cristian antes de la entrega del apartamento",
+      "phase": "enemar",
+      "order": 4,
+      "front": "Activos",
+      "owner": "Tú + Cristian",
+      "due": "2027-03-31",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t25": {
+      "id": "t25",
+      "title": "ZONAL: versión mínima probada con corredores",
+      "phase": "enemar",
+      "order": 5,
+      "front": "Laboratorio",
+      "owner": "Tú",
+      "due": "2027-03-31",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t26": {
+      "id": "t26",
+      "title": "Decisión final sobre IKM (fecha límite)",
+      "phase": "enemar",
+      "order": 6,
+      "front": "IKM",
+      "owner": "Tú + esposa",
+      "due": "2027-03-31",
+      "status": "pendiente",
+      "note": "Con las tres condiciones cumplidas te quedas; si no, plan de salida.",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t27": {
+      "id": "t27",
+      "title": "Ejecutar la decisión: empleo, consultor asociado o seguir en IKM",
+      "phase": "abrjun",
+      "order": 1,
+      "front": "Empleo",
+      "owner": "Tú",
+      "due": "2027-04-30",
+      "status": "pendiente",
+      "note": "Si hay oferta: declarar la SAS y cerrar ordenadamente con IKM.",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t28": {
+      "id": "t28",
+      "title": "Primera operación del apartamento nuevo en rentas cortas",
+      "phase": "abrjun",
+      "order": 2,
+      "front": "Activos",
+      "owner": "Cristian",
+      "due": "2027-06-30",
+      "status": "pendiente",
+      "note": "",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    },
+    "t29": {
+      "id": "t29",
+      "title": "Berry Lab: 4 fines de semana de preventa",
+      "phase": "abrjun",
+      "order": 3,
+      "front": "Laboratorio",
+      "owner": "Tú",
+      "due": "2027-06-30",
+      "status": "pendiente",
+      "note": "Cocina compartida por horas, 3 productos, concepto sanitario.",
+      "blockCause": "",
+      "doneAt": "",
+      "version": 1,
+      "updatedAt": 0
+    }
+  },
+  "kpis": {
+    "values": {
+      "fundadores": 0,
+      "suscriptores": 0,
+      "conversaciones": 0,
+      "ticketAlto": 0,
+      "headhunters": 0,
+      "publicaciones": 0
+    }
+  },
+  "checkpoints": {
+    "ene-2027": {
+      "id": "ene-2027",
+      "title": "Revisión 1 · segunda semana de enero",
+      "windowStart": "2027-01-11",
+      "windowEnd": "2027-01-15",
+      "order": 1,
+      "criteria": {
+        "comisiones": {
+          "label": "Me pagan mis comisiones",
+          "value": "pendiente",
+          "measurable": "",
+          "evidence": "",
+          "link": ""
+        },
+        "ventas": {
+          "label": "IKM vende más",
+          "value": "pendiente",
+          "measurable": "",
+          "evidence": "",
+          "link": ""
+        },
+        "deuda": {
+          "label": "Se cubre la deuda de IKM conmigo",
+          "value": "pendiente",
+          "measurable": "",
+          "evidence": "",
+          "link": ""
+        }
+      },
+      "note": "",
+      "version": 1
+    },
+    "mar-2027": {
+      "id": "mar-2027",
+      "title": "Decisión · última semana de marzo",
+      "windowStart": "2027-03-22",
+      "windowEnd": "2027-03-31",
+      "order": 2,
+      "criteria": {
+        "comisiones": {
+          "label": "Me pagan mis comisiones",
+          "value": "pendiente",
+          "measurable": "",
+          "evidence": "",
+          "link": ""
+        },
+        "ventas": {
+          "label": "IKM vende más",
+          "value": "pendiente",
+          "measurable": "",
+          "evidence": "",
+          "link": ""
+        },
+        "deuda": {
+          "label": "Se cubre la deuda de IKM conmigo",
+          "value": "pendiente",
+          "measurable": "",
+          "evidence": "",
+          "link": ""
+        }
+      },
+      "note": "",
+      "version": 1
+    }
+  },
+  "habits": {
+    "h1": {
+      "id": "h1",
+      "title": "Publicar en LinkedIn",
+      "freq": "semanal",
+      "target": 2,
+      "days": [
+        3,
+        5
+      ],
+      "when": "Miércoles y viernes, mediodía",
+      "front": "LinkedIn",
+      "order": 1
+    },
+    "h2": {
+      "id": "h2",
+      "title": "Comentarios en LinkedIn",
+      "freq": "diario",
+      "target": 1,
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "when": "Lunes a viernes, 12:00–12:20",
+      "front": "LinkedIn",
+      "order": 2
+    },
+    "h3": {
+      "id": "h3",
+      "title": "Hora creativa",
+      "freq": "semanal",
+      "target": 2,
+      "days": [
+        2,
+        4
+      ],
+      "when": "Martes y jueves, primera hora",
+      "front": "Negocio propio",
+      "order": 3
+    },
+    "h4": {
+      "id": "h4",
+      "title": "Revisión semanal",
+      "freq": "semanal",
+      "target": 1,
+      "days": [
+        5
+      ],
+      "when": "Viernes 2:00 p. m., 45 min",
+      "front": "",
+      "order": 4
+    },
+    "h5": {
+      "id": "h5",
+      "title": "Revisión de activos con Cristian",
+      "freq": "quincenal",
+      "target": 1,
+      "days": [],
+      "when": "Primer día hábil tras el 15 y el 30",
+      "front": "Activos",
+      "order": 5
+    },
+    "h6": {
+      "id": "h6",
+      "title": "Revaluación del portafolio",
+      "freq": "quincenal",
+      "target": 1,
+      "days": [
+        5
+      ],
+      "when": "Viernes en la tarde",
+      "front": "Activos",
+      "order": 6
+    },
+    "h7": {
+      "id": "h7",
+      "title": "Visita a predios de la finca",
+      "freq": "mensual",
+      "target": 1,
+      "days": [
+        6
+      ],
+      "when": "Primer sábado del mes",
+      "front": "Finca",
+      "order": 7
+    }
+  },
+  "blocks": {
+    "b01": {
+      "id": "b01",
+      "day": 1,
+      "start": "05:00",
+      "end": "06:00",
+      "title": "Gimnasio",
+      "cat": "salud",
+      "note": "Supuesto declarado: 1 hora."
+    },
+    "b02": {
+      "id": "b02",
+      "day": 2,
+      "start": "05:00",
+      "end": "06:00",
+      "title": "Gimnasio",
+      "cat": "salud",
+      "note": "Supuesto declarado: 1 hora."
+    },
+    "b03": {
+      "id": "b03",
+      "day": 3,
+      "start": "05:00",
+      "end": "06:00",
+      "title": "Gimnasio",
+      "cat": "salud",
+      "note": "Supuesto declarado: 1 hora."
+    },
+    "b04": {
+      "id": "b04",
+      "day": 4,
+      "start": "05:00",
+      "end": "06:00",
+      "title": "Gimnasio",
+      "cat": "salud",
+      "note": "Supuesto declarado: 1 hora."
+    },
+    "b05": {
+      "id": "b05",
+      "day": 5,
+      "start": "05:00",
+      "end": "06:00",
+      "title": "Gimnasio",
+      "cat": "salud",
+      "note": "Supuesto declarado: 1 hora."
+    },
+    "b06": {
+      "id": "b06",
+      "day": 6,
+      "start": "05:00",
+      "end": "06:00",
+      "title": "Gimnasio",
+      "cat": "salud",
+      "note": "Supuesto declarado: 1 hora."
+    },
+    "b07": {
+      "id": "b07",
+      "day": 0,
+      "start": "05:00",
+      "end": "06:00",
+      "title": "Gimnasio",
+      "cat": "salud",
+      "note": "Supuesto declarado: 1 hora."
+    },
+    "b08": {
+      "id": "b08",
+      "day": 1,
+      "start": "12:00",
+      "end": "14:00",
+      "title": "Almuerzo · ventana libre",
+      "cat": "libre",
+      "note": ""
+    },
+    "b09": {
+      "id": "b09",
+      "day": 2,
+      "start": "12:00",
+      "end": "14:00",
+      "title": "Almuerzo · ventana libre",
+      "cat": "libre",
+      "note": ""
+    },
+    "b10": {
+      "id": "b10",
+      "day": 3,
+      "start": "12:00",
+      "end": "14:00",
+      "title": "Almuerzo · ventana libre",
+      "cat": "libre",
+      "note": ""
+    },
+    "b11": {
+      "id": "b11",
+      "day": 4,
+      "start": "12:00",
+      "end": "14:00",
+      "title": "Almuerzo · ventana libre",
+      "cat": "libre",
+      "note": ""
+    },
+    "b12": {
+      "id": "b12",
+      "day": 5,
+      "start": "12:00",
+      "end": "14:00",
+      "title": "Almuerzo · ventana libre",
+      "cat": "libre",
+      "note": ""
+    },
+    "b13": {
+      "id": "b13",
+      "day": 1,
+      "start": "08:00",
+      "end": "09:00",
+      "title": "Comité de nuevos negocios",
+      "cat": "ikm",
+      "note": ""
+    },
+    "b14": {
+      "id": "b14",
+      "day": 1,
+      "start": "09:00",
+      "end": "10:00",
+      "title": "Comité operativo",
+      "cat": "ikm",
+      "note": ""
+    },
+    "b15": {
+      "id": "b15",
+      "day": 1,
+      "start": "11:00",
+      "end": "12:00",
+      "title": "Comité de socios",
+      "cat": "ikm",
+      "note": "Supuesto declarado: duración de 1 hora."
+    },
+    "b16": {
+      "id": "b16",
+      "day": 3,
+      "start": "08:00",
+      "end": "10:00",
+      "title": "Comité directivo",
+      "cat": "ikm",
+      "note": ""
+    },
+    "b17": {
+      "id": "b17",
+      "day": 1,
+      "start": "17:00",
+      "end": "18:00",
+      "title": "Ticket alto",
+      "cat": "personal",
+      "note": ""
+    },
+    "b18": {
+      "id": "b18",
+      "day": 2,
+      "start": "17:00",
+      "end": "18:00",
+      "title": "Reunión de suscripción con tu esposa",
+      "cat": "personal",
+      "note": ""
+    },
+    "b19": {
+      "id": "b19",
+      "day": 3,
+      "start": "17:00",
+      "end": "18:00",
+      "title": "Llamada con Cristian",
+      "cat": "personal",
+      "note": ""
+    },
+    "b20": {
+      "id": "b20",
+      "day": 4,
+      "start": "17:00",
+      "end": "18:00",
+      "title": "Ticket alto y headhunters",
+      "cat": "personal",
+      "note": ""
+    },
+    "b21": {
+      "id": "b21",
+      "day": 5,
+      "start": "14:00",
+      "end": "14:45",
+      "title": "Revisión semanal",
+      "cat": "personal",
+      "note": ""
+    },
+    "b22": {
+      "id": "b22",
+      "day": 5,
+      "start": "15:00",
+      "end": "17:00",
+      "title": "Negocio propio",
+      "cat": "personal",
+      "note": ""
+    },
+    "b23": {
+      "id": "b23",
+      "day": 6,
+      "start": "09:00",
+      "end": "18:00",
+      "title": "Familia",
+      "cat": "familia",
+      "note": "Supuesto declarado: horario del bloque."
+    }
+  },
+  "lab": {
+    "zonal": {
+      "id": "zonal",
+      "name": "ZONAL",
+      "description": "App de carrera con conquista territorial",
+      "quarter": "2027-T1",
+      "exitCriterion": "",
+      "decision": "",
+      "decisionNote": "",
+      "decidedAt": ""
+    },
+    "berry": {
+      "id": "berry",
+      "name": "Berry Lab",
+      "description": "Postres en cocina oculta",
+      "quarter": "2027-T2",
+      "exitCriterion": "",
+      "decision": "",
+      "decisionNote": "",
+      "decidedAt": ""
+    }
+  }
+}
