@@ -9,6 +9,10 @@ const html = r('src/shell.html')
   .replace('/*__JS__*/', () => js);
 fs.mkdirSync(__dirname + '/dist', { recursive: true });
 fs.writeFileSync(__dirname + '/dist/derrotero.html', html);
-// Versión para abrir en un navegador fuera del artefacto (pruebas): documento completo.
-fs.writeFileSync(__dirname + '/dist/derrotero.local.html', '<!doctype html><html lang="es-CO"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>' + html + '</body></html>');
+// Versión para abrir en un navegador fuera del artefacto: documento completo.
+// Se usa para pruebas locales (derrotero.local.html) y para el despliegue en Vercel (web/index.html).
+const doc = '<!doctype html><html lang="es-CO"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body>' + html + '</body></html>';
+fs.writeFileSync(__dirname + '/dist/derrotero.local.html', doc);
+fs.mkdirSync(__dirname + '/dist/web', { recursive: true });
+fs.writeFileSync(__dirname + '/dist/web/index.html', doc);
 console.log('dist/derrotero.html', (html.length / 1024).toFixed(1) + ' KB');

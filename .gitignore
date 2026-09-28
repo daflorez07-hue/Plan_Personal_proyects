@@ -3,3 +3,4 @@ dist/derrotero.local.html
 .env
 .env.*
 !.env.example
+dist/web/

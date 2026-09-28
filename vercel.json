@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "",
+  "buildCommand": "node build.js",
+  "outputDirectory": "dist/web",
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+      { "key": "Permissions-Policy", "value": "microphone=(self)" },
+      { "key": "Cache-Control", "value": "no-cache" }
+    ] }
+  ]
+}
