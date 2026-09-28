@@ -38,10 +38,10 @@ const URL_ = 'http://localhost:' + PORT + '/';
     const n = await pool.query("select count(*)::int as n from derrotero_docs where coll = 'tasks' and not deleted");
     assert.equal(n.rows[0].n, 35);
     const cfg = await pool.query("select data->'inboxApplied' as ia from derrotero_docs where coll = 'config' and id = 'main'");
-    assert.equal(cfg.rows[0].ia.length, 14);
+    assert.equal(cfg.rows[0].ia.length, 20);
     await a.evaluate(() => document.querySelectorAll('[data-act="toast-close"]').forEach((b) => b.click()));
     assert.match(await a.textContent('#conn'), /Postgres · en línea/);
-    ok('base vacía → plan base + lo registrado de la conversación en Postgres (35 actividades, 14 cambios), una sola vez');
+    ok('base vacía → plan base + lo registrado de la conversación en Postgres (35 actividades, 20 cambios), una sola vez');
 
     await a.waitForFunction(() => /Conectado/.test(document.querySelector('#conn').textContent), null, { timeout: 10000 });
     await a.waitForFunction(() => document.querySelectorAll('svg.road-svg line[stroke="#4B5FB0"]').length > 20, null, { timeout: 10000 });

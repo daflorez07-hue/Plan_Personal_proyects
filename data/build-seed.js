@@ -29,7 +29,7 @@ const T = [
  ['t26','enemar','Decisión final sobre IKM (fecha límite)','IKM','Tú + esposa','2027-03-31','pendiente','Con las tres condiciones cumplidas te quedas; si no, plan de salida.'],
  ['t27','abrjun','Ejecutar la decisión: empleo, consultor asociado o seguir en IKM','Empleo','Tú','2027-04-30','pendiente','Si hay oferta: declarar la SAS y cerrar ordenadamente con IKM.'],
  ['t28','abrjun','Primera operación del apartamento nuevo en rentas cortas','Activos','Cristian','2027-06-30','pendiente',''],
- ['t29','abrjun','Berry Lab: 4 fines de semana de preventa','Laboratorio','Tú','2027-06-30','pendiente','Cocina compartida por horas, 3 productos, concepto sanitario.'],
+ ['t29','abrjun','MORALEJA: 4 fines de semana de preventa','Laboratorio','Tú','2027-06-30','pendiente','Cocina compartida por horas, 3 productos, concepto sanitario.'],
 ];
 const order = {};
 const tasks = {};
@@ -84,7 +84,7 @@ const seed = {
   blocks: {},
   lab: {
     zonal: { id: 'zonal', name: 'ZONAL', description: 'App de carrera con conquista territorial', quarter: '2027-T1', exitCriterion: '', decision: '', decisionNote: '', decidedAt: '' },
-    berry: { id: 'berry', name: 'Berry Lab', description: 'Postres en cocina oculta', quarter: '2027-T2', exitCriterion: '', decision: '', decisionNote: '', decidedAt: '' }
+    berry: { id: 'berry', name: 'MORALEJA', description: 'Postres en cocina oculta', quarter: '2027-T2', exitCriterion: '', decision: '', decisionNote: '', decidedAt: '' }
   }
 };
 // Semana tipo: 0=domingo … 6=sábado
