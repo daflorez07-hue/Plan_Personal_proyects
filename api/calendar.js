@@ -28,7 +28,7 @@ async function fetchText(u) {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 9000);
   try {
-    const r = await fetch(u, { signal: ctl.signal, headers: { accept: 'text/calendar, text/plain, */*' } });
+    const r = await fetch(u, { signal: ctl.signal, headers: { accept: 'text/calendar, text/plain, */*', 'user-agent': 'Mozilla/5.0 (compatible; Derrotero/2.0; +calendario personal)' } });
     if (!r.ok) throw new Error('http ' + r.status);
     const text = await r.text();
     if (text.length > MAX_BYTES) throw new Error('too_large');
@@ -65,12 +65,11 @@ function expand(ical, text, calIndex, from, to) {
   return out;
 }
 
-module.exports = async function handler(req, res) {
-  if (!guard(req, res)) return;
+/** Lee y expande todos los calendarios configurados. Guarda 5 minutos en memoria. */
+async function collect(fresh) {
   const urls = sources();
-  if (!urls.length) { res.status(200).json({ configured: false, events: [] }); return; }
-  const fresh = req.query && req.query.fresh === '1';
-  if (!fresh && cache.body && Date.now() - cache.at < 5 * 60 * 1000) { res.status(200).json(cache.body); return; }
+  if (!urls.length) return { configured: false, events: [] };
+  if (!fresh && cache.body && Date.now() - cache.at < 5 * 60 * 1000) return cache.body;
   const ical = require('node-ical');
   const now = Date.now();
   const from = new Date(now - 45 * 86400000);
@@ -83,6 +82,12 @@ module.exports = async function handler(req, res) {
   events.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
   const body = { configured: true, calendars: urls.length, errors, fetchedAt: now, events: events.slice(0, MAX_EVENTS) };
   if (!errors.length) cache = { at: now, body };
-  res.status(200).json(body);
+  return body;
+}
+
+module.exports = async function handler(req, res) {
+  if (!guard(req, res)) return;
+  res.status(200).json(await collect(req.query && req.query.fresh === '1'));
 };
 module.exports.expand = expand;
+module.exports.collect = collect;

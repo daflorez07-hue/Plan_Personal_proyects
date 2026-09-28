@@ -29,7 +29,7 @@ Sitio estático en Vercel con dos funciones:
 - `api/db.js`: base de documentos sobre **Postgres (Neon, plan gratuito)**. Una tabla `derrotero_docs (coll, id, data jsonb, seq)`; el cliente sondea el número de revisión cada 12 s y trae los cambios de otros dispositivos.
 - `api/calendar.js`: lee la dirección secreta iCal de `CALENDAR_ICS_URL` en el servidor, expande repeticiones y devuelve solo título, fecha y hora.
 
-Acceso: el sitio y las funciones quedan detrás de **Vercel Authentication** (solo tu cuenta de Vercel entra). Las funciones además exigen un encabezado propio, lo que bloquea peticiones desde otros sitios. Si algún día agregas un dominio propio, cambia la protección a "todos los dominios".
+Acceso: el sitio y las funciones quedan detrás de **Vercel Authentication** en todos los dominios (solo tu cuenta de Vercel entra). Las funciones de datos además exigen un encabezado propio, lo que bloquea peticiones desde otros sitios. `/api/health` informa si la base y el calendario responden, solo con conteos.
 
 Sin base de datos conectada la app funciona en modo local (localStorage). La misma página sigue funcionando como artefacto de Claude con su base propia.
 
