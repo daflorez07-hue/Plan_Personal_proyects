@@ -344,6 +344,11 @@
     return doc.output('arraybuffer');
   }
 
+  function announceInbox(added) {
+    if (!added || !added.length) return;
+    toast({ kicker: 'Registrado por Claude', title: added.length === 1 ? 'Un pendiente nuevo de la conversación' : added.length + ' pendientes nuevos de la conversación', text: added.map(function (t) { return '· ' + t.title; }).join('\n') });
+  }
+
   // ───────────── clics ─────────────
   var ACT = {
     'more': function () { U.more = !U.more; renderChrome(); },
@@ -470,7 +475,11 @@
       if (bk) { U.exportMsg = await saveFile('derrotero-respaldo-' + bk.day + '.json', JSON.stringify(bk.data, null, 2)); render(true); }
     },
     'reset-local': function () { DS.resetLocal(); U.exportMsg = 'Plan base restaurado en este navegador.'; render(true); },
-    'load-seed': async function (b) { U.seedMsg = 'Cargando…'; render(true); await DS.loadSeedIntoDb(b.dataset.src === 'local'); U.seedMsg = ''; render(true); },
+    'load-seed': async function (b) {
+      U.seedMsg = 'Cargando…'; render(true);
+      await DS.loadSeedIntoDb(b.dataset.src === 'local');
+      U.seedMsg = ''; announceInbox(DS.applyInbox()); render(true);
+    },
     'goto-day': function (b) { var d = b.dataset.d; U.agView = 'mes'; U.agMonth = d.slice(0, 7); U.agDay = d; navigate('agenda'); },
     'cal-refresh': async function () { toast({ title: 'Leyendo el calendario…' }); await DS.loadCalendar(true); render(true); toast({ title: S.cal.status === 'ok' ? 'Calendario al día: ' + S.cal.events.length + ' eventos.' : 'El calendario no está conectado o no respondió.' }); },
     'toast-close': function (b) { closeToast(b.dataset.t); },
@@ -710,7 +719,13 @@
     DS.onChange(function (kind) {
       if (kind && kind.toast) { toast({ kind: 'bad', title: kind.toast }); return; }
       if (kind === 'readonly') toast({ title: 'Esta cuenta no puede editar el plan', text: 'La vista quedó en solo lectura.' });
-      if (!bootedOnce && DS.ready() && !S.empty) { bootedOnce = true; setTimeout(function () { tick(); DS.dailyBackup(); }, 1500); }
+      if (!bootedOnce && DS.ready() && !S.empty) {
+        bootedOnce = true;
+        setTimeout(function () {
+          announceInbox(DS.applyInbox());
+          tick(); DS.dailyBackup();
+        }, 1500);
+      }
       scheduleRender();
     });
     render(true);

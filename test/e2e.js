@@ -19,14 +19,17 @@ const SHOTS = process.env.SHOTS;
 
   // 1. semilla
   await page.waitForSelector('.dash');
+  await page.waitForSelector('.toast >> text=Registrado por Claude', { timeout: 5000 });
+  await page.evaluate(() => document.querySelectorAll('[data-act="toast-close"]').forEach((b) => b.click()));
   const stats = await page.textContent('.dash');
-  assert.match(stats, /10\s*%/); assert.match(stats, /3\/29 hechas/);
+  assert.match(stats, /9\s*%/); assert.match(stats, /3\/34 hechas/);
   assert.ok(await page.locator('svg.road-svg #walker').count() === 1, 'quien camina está en el camino');
   assert.ok(await page.locator('svg.road-svg .rd-hit').count() >= 10, 'hitos del plan sobre el camino');
   if (SHOTS) await page.screenshot({ path: SHOTS + '/hoy-desktop.png', fullPage: true });
   await page.click('.side [data-route="actividades"]');
-  assert.equal(await page.locator('.trow').count(), 29);
-  ok('criterio 1: 29 actividades, 3 hechas, 10 %');
+  assert.equal(await page.locator('.trow').count(), 34);
+  assert.equal(await page.locator('#task-cv01').count(), 1, 'pendientes de la conversación registrados');
+  ok('criterio 1: 29 actividades base + 5 pendientes de la conversación, 3 hechas');
 
   // 2. ciclo de estado + bitácora
   await page.click('#task-t04 .st-btn');

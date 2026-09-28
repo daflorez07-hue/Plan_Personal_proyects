@@ -166,12 +166,12 @@
 
   // ───── bitácora (H-02, RF-06): un documento por día ─────
   var auditBuf = []; var auditTimer = null;
-  function audit(entity, entityId, label, field, before, after) {
+  function audit(entity, entityId, label, field, before, after, actor) {
     auditBuf.push({
       at: now(), entity: entity, entityId: entityId, label: String(label || '').slice(0, 160), field: field,
       before: typeof before === 'object' ? JSON.stringify(before) : String(before == null ? '' : before).slice(0, 400),
       after: typeof after === 'object' ? JSON.stringify(after) : String(after == null ? '' : after).slice(0, 400),
-      actor: S.meId || 'app'
+      actor: actor || S.meId || 'app'
     });
     clearTimeout(auditTimer);
     auditTimer = setTimeout(flushAudit, 700);
@@ -277,9 +277,12 @@
       Object.keys(docs[c]).forEach(function (id) { S.d[c][id] = docs[c][id]; ops.push({ op: 'set', coll: c, id: id, data: clone(docs[c][id]) }); });
     });
     S.empty = false;
+    S.seeding = true;
     emit('all');
-    if (db && db.batch) { try { await db.batch(ops); } catch (e) { handleWriteError(e); } return; }
-    for (var i = 0; i < ops.length; i++) await put(ops[i].coll, ops[i].id, ops[i].data);
+    try {
+      if (db && db.batch) { try { await db.batch(ops); } catch (e) { handleWriteError(e); } }
+      else for (var i = 0; i < ops.length; i++) await put(ops[i].coll, ops[i].id, ops[i].data);
+    } finally { S.seeding = false; }
   }
 
   // respaldo diario (RNF): un documento por día, se conservan 14
@@ -319,6 +322,35 @@
     startLocal(S.localReason);
   }
 
+  // ───── pendientes registrados por Claude (una sola vez por pendiente) ─────
+  function phaseFor(date) {
+    var ph = phases(); var d = date || today();
+    for (var i = 0; i < ph.length; i++) if (d >= ph[i].start && d <= ph[i].end) return ph[i].id;
+    return ph.length ? (d < ph[0].start ? ph[0].id : ph[ph.length - 1].id) : '';
+  }
+  function applyInbox() {
+    var inbox = root.DERROTERO_INBOX || []; var cfg = config();
+    if (!cfg || !S.canWrite || S.empty || S.seeding || !inbox.length) return [];
+    var done = (cfg.inboxApplied || []).slice(); var added = [];
+    var names = fronts().map(function (f) { return f.name; });
+    inbox.forEach(function (it) {
+      if (done.indexOf(it.id) >= 0) return;
+      done.push(it.id);
+      if (S.d.tasks[it.id]) return;
+      var phase = phaseFor(it.due);
+      var t = {
+        id: it.id, title: it.title, phase: phase, order: DL.nextOrder(tasks(), phase),
+        front: names.indexOf(it.front) >= 0 ? it.front : (names[0] || ''), owner: it.owner || 'Tú', due: it.due || '',
+        status: 'pendiente', note: it.note || '', blockCause: '', doneAt: '', version: 1, updatedAt: now()
+      };
+      put('tasks', it.id, t);
+      audit('actividad', it.id, t.title, 'creada', '', t.title, 'claude');
+      added.push(t);
+    });
+    if (done.length !== (cfg.inboxApplied || []).length) put('config', 'main', Object.assign({}, config(), { inboxApplied: done }));
+    return added;
+  }
+
   // ───── calendario personal (solo lectura) ─────
   S.cal = { status: 'off', events: [], fetchedAt: 0, calendars: 0, errors: [] };
   function calendarEvents() { return S.cal.events || []; }
@@ -343,6 +375,6 @@
     updateTask: updateTask, addTask: addTask, deleteTask: deleteTask, bumpKpi: bumpKpi, saveConfig: saveConfig,
     snapshotAll: snapshotAll, loadSeedIntoDb: loadSeedIntoDb, dailyBackup: dailyBackup, listBackups: listBackups,
     names: names, resetLocal: resetLocal, clone: clone, today: today, localSaved: localSaved,
-    loadCalendar: loadCalendar, calendar: calendarEvents
+    loadCalendar: loadCalendar, calendar: calendarEvents, applyInbox: applyInbox
   };
 })(window);
