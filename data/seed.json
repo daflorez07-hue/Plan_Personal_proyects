@@ -564,7 +564,7 @@
     },
     "t29": {
       "id": "t29",
-      "title": "Berry Lab: 4 fines de semana de preventa",
+      "title": "MORALEJA: 4 fines de semana de preventa",
       "phase": "abrjun",
       "order": 3,
       "front": "Laboratorio",
@@ -900,7 +900,7 @@
     },
     "berry": {
       "id": "berry",
-      "name": "Berry Lab",
+      "name": "MORALEJA",
       "description": "Postres en cocina oculta",
       "quarter": "2027-T2",
       "exitCriterion": "",

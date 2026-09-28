@@ -326,7 +326,7 @@
     ['LinkedIn', /linked ?in|publicaci[oó]n|post\b|comentarios?/i],
     ['Empleo', /headhunter|cazatalentos|entrevista|empleo|hoja de vida|reclutador/i],
     ['Finca', /finca|predio|altaverde|supat[aá]|silvania|san francisco/i],
-    ['Laboratorio', /zonal|berry|laboratorio/i],
+    ['Laboratorio', /zonal|moraleja|berry|laboratorio/i],
     ['Activos', /apartamento|rentas? cortas?|portafolio|acciones|inmobiliari/i],
     ['IKM', /\bikm\b|comit[eé]|comisiones/i],
     ['Negocio propio', /cristian|suscripci[oó]n|fundador|ticket alto|cliente|oferta|sas\b|contador|abogado/i]

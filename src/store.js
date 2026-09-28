@@ -352,12 +352,14 @@
       } else if (kind === 'patch') {
         var cur = S.d.tasks[it.task]; var patch = {};
         if (it.status && cur.status !== 'hecha' && cur.status !== it.status) patch.status = it.status;
+        if (it.title && cur.title === it.titleFrom) patch.title = it.title;
         if (it.noteAppend && String(cur.note || '').indexOf(it.noteAppend) < 0) patch.note = (cur.note ? cur.note + '\n\n' : '') + it.noteAppend;
         if (!Object.keys(patch).length) return;
         updateTask(it.task, patch, { silent: true });
         if (patch.status) audit('actividad', it.task, cur.title, 'estado', cur.status, patch.status, 'claude');
+        if (patch.title) audit('actividad', it.task, cur.title, 'título', cur.title, patch.title, 'claude');
         if (patch.note) audit('actividad', it.task, cur.title, 'nota', cur.note || '', patch.note, 'claude');
-        added.push({ title: 'Actualizada: ' + cur.title });
+        added.push({ title: 'Actualizada: ' + (patch.title || cur.title) });
       } else if (kind === 'agenda') {
         var n = 0;
         (it.items || []).forEach(function (a) {
@@ -368,11 +370,14 @@
         });
         if (n) added.push({ title: it.summary || n + ' citas en la agenda' });
       } else if (kind === 'lab') {
-        var p = S.d.lab[it.lab];
-        if (!p || String(p.exitCriterion || '').trim()) return;
-        put('lab', p.id, Object.assign({}, p, { exitCriterion: it.exitCriterion }));
-        audit('laboratorio', p.id, p.name, 'exitCriterion', '', it.exitCriterion, 'claude');
-        added.push({ title: 'Criterio de salida propuesto para ' + p.name });
+        var p = S.d.lab[it.lab]; if (!p) return;
+        var lp = {}; var crit = String(p.exitCriterion || '').trim();
+        if (it.exitCriterion && (!crit || (it.replaceFrom && crit === it.replaceFrom))) lp.exitCriterion = it.exitCriterion;
+        if (it.name && p.name === it.nameFrom) lp.name = it.name;
+        if (!Object.keys(lp).length) return;
+        put('lab', p.id, Object.assign({}, p, lp));
+        if (lp.name) { audit('laboratorio', p.id, p.name, 'nombre', p.name, lp.name, 'claude'); added.push({ title: p.name + ' ahora se llama ' + lp.name }); }
+        if (lp.exitCriterion) { audit('laboratorio', p.id, lp.name || p.name, 'exitCriterion', p.exitCriterion || '', lp.exitCriterion, 'claude'); added.push({ title: (crit ? 'Criterio de salida aprobado para ' : 'Criterio de salida propuesto para ') + (lp.name || p.name) }); }
       }
     });
     if (done.length !== (cfg.inboxApplied || []).length) put('config', 'main', Object.assign({}, config(), { inboxApplied: done }));
