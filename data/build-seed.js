@@ -38,8 +38,6 @@ for (const [id, phase, title, front, owner, due, status, note] of T) {
   tasks[id] = { id, title, phase, order: order[phase], front, owner, due, status, note, blockCause: '',
     doneAt: status === 'hecha' ? due : '', version: 1, updatedAt: 0 };
 }
-const crit = (label) => ({ label, value: 'pendiente', measurable: '', evidence: '', link: '' });
-const criteria = () => ({ comisiones: crit('Me pagan mis comisiones'), ventas: crit('IKM vende más'), deuda: crit('Se cubre la deuda de IKM conmigo') });
 const seed = {
   config: {
     id: 'main',
@@ -74,10 +72,6 @@ const seed = {
   },
   tasks,
   kpis: { values: { fundadores: 0, suscriptores: 0, conversaciones: 0, ticketAlto: 0, headhunters: 0, publicaciones: 0 } },
-  checkpoints: {
-    'ene-2027': { id: 'ene-2027', title: 'Revisión 1 · segunda semana de enero', windowStart: '2027-01-11', windowEnd: '2027-01-15', order: 1, criteria: criteria(), note: '', version: 1 },
-    'mar-2027': { id: 'mar-2027', title: 'Decisión · última semana de marzo', windowStart: '2027-03-22', windowEnd: '2027-03-31', order: 2, criteria: criteria(), note: '', version: 1 }
-  },
   habits: {
     h1: { id: 'h1', title: 'Publicar en LinkedIn', freq: 'semanal', target: 2, days: [3, 5], when: 'Miércoles y viernes, mediodía', front: 'LinkedIn', order: 1 },
     h2: { id: 'h2', title: 'Comentarios en LinkedIn', freq: 'diario', target: 1, days: [1, 2, 3, 4, 5], when: 'Lunes a viernes, 12:00–12:20', front: 'LinkedIn', order: 2 },

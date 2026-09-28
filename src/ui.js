@@ -24,7 +24,6 @@
     hoy: '<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
     agenda: '<rect x="3" y="5" width="18" height="16" rx="1"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M8 14h3v3H8z"/>',
     actividades: '<path d="M9 6h12M9 12h12M9 18h12"/><path d="M3 5l1.5 1.5L7 4M3 11l1.5 1.5L7 10M3 17l1.5 1.5L7 16"/>',
-    control: '<path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/>',
     indicadores: '<path d="M3 20h18"/><path d="M6 16v-4M11 16V8M16 16v-6M21 16V5"/>',
     habitos: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4h-4"/><path d="M9 12l2 2 4-4"/>',
     semana: '<rect x="3" y="4" width="18" height="16" rx="1"/><path d="M3 9h18M9 9v11M15 9v11"/>',
@@ -54,11 +53,11 @@
 
   var NAV = [
     { label: 'General', items: [['hoy', 'Hoy'], ['agenda', 'Agenda']] },
-    { label: 'Plan', items: [['actividades', 'Actividades'], ['control', 'Puntos de control'], ['indicadores', 'Indicadores']] },
+    { label: 'Plan', items: [['actividades', 'Actividades'], ['indicadores', 'Indicadores']] },
     { label: 'Ritmo', items: [['habitos', 'Hábitos'], ['semana', 'Semana tipo'], ['frentes', 'Frentes por modo'], ['laboratorio', 'Laboratorio']] },
     { label: 'Revisión', items: [['resumen', 'Resumen semanal'], ['bitacora', 'Bitácora'], ['ajustes', 'Ajustes']] }
   ];
-  var TITLES = { hoy: 'Hoy', agenda: 'Agenda', actividades: 'Actividades', control: 'Puntos de control', indicadores: 'Indicadores', habitos: 'Hábitos', semana: 'Semana tipo', frentes: 'Frentes por modo', laboratorio: 'Laboratorio', resumen: 'Resumen semanal', bitacora: 'Bitácora', ajustes: 'Ajustes' };
+  var TITLES = { hoy: 'Hoy', agenda: 'Agenda', actividades: 'Actividades', indicadores: 'Indicadores', habitos: 'Hábitos', semana: 'Semana tipo', frentes: 'Frentes por modo', laboratorio: 'Laboratorio', resumen: 'Resumen semanal', bitacora: 'Bitácora', ajustes: 'Ajustes' };
 
   function counts() {
     var t = today(); var now = Date.now();
@@ -80,8 +79,8 @@
 
   function tabbarHtml() {
     var c = counts();
-    var tabs = [['hoy', 'Hoy'], ['agenda', 'Agenda'], ['actividades', 'Plan'], ['control', 'Control']];
-    var inMore = ['hoy', 'agenda', 'actividades', 'control'].indexOf(U.route) < 0;
+    var tabs = [['hoy', 'Hoy'], ['agenda', 'Agenda'], ['actividades', 'Plan'], ['indicadores', 'Metas']];
+    var inMore = ['hoy', 'agenda', 'actividades', 'indicadores'].indexOf(U.route) < 0;
     return tabs.map(function (t) {
       var n = c[t[0]];
       return '<a href="#' + t[0] + '" data-route="' + t[0] + '"' + (U.route === t[0] ? ' aria-current="page"' : '') + '>' + ic(t[0]) + '<span>' + t[1] + '</span>' + (n ? '<span class="badge">' + n + '</span>' : '') + '</a>';
@@ -89,8 +88,10 @@
   }
 
   function connHtml() {
+    var cal = S.backend === 'artefacto' ? '' : '<span class="mono" style="margin-top:6px">Calendario</span><strong><span class="dot' + (S.cal.status === 'ok' ? '' : ' off') + '"></span>' + (S.cal.status === 'ok' ? 'Conectado' : S.cal.status === 'loading' ? 'Leyendo…' : 'Sin conectar') + '</strong>';
+    if (S.mode === 'db' && S.backend === 'vercel') return '<span class="mono">Base de datos</span><strong><span class="dot' + (S.offline ? ' off' : '') + '"></span>' + (S.offline ? 'Sin conexión' : 'Postgres · en línea') + '</strong>' + cal;
     if (S.mode === 'db') return '<span class="mono">Base de datos</span><strong><span class="dot"></span>En vivo, compartida</strong>' + (S.canWrite ? '' : '<span class="mono">Solo lectura</span>');
-    if (S.mode === 'local') return '<span class="mono">Base de datos</span><strong><span class="dot off"></span>Modo local</strong>';
+    if (S.mode === 'local') return '<span class="mono">Base de datos</span><strong><span class="dot off"></span>Modo local</strong>' + cal;
     return '<span class="mono">Base de datos</span><strong>Conectando…</strong>';
   }
 
@@ -130,6 +131,10 @@
     if (st === 'en curso') return tm.timed ? 'en curso · termina ' + DL.fmtTime(DL.nowTimeBogota(tm.end)) : 'vence hoy a medianoche';
     if (st === 'por recordar') return 'empieza en ' + span(tm.start - now);
     return 'en ' + span(tm.start - now);
+  }
+  function calItem(e, opts) {
+    return '<div class="aitem cal"><div class="when">' + (e.time ? DL.fmtTime(e.time) : 'Todo el día') + (opts && opts.showDate ? '<small>' + DL.fmtDate(e.date, { weekday: true, year: false }) + '</small>' : '') + '</div>' +
+      '<div class="what"><b>' + esc(e.title) + '</b><div class="row"><span class="cal-tag">Calendario</span>' + (e.time && e.endTime ? '<span class="mono tenue" style="font-size:12px">hasta ' + DL.fmtTime(e.endTime) + '</span>' : '') + '</div></div><div class="acts"></div></div>';
   }
   var AG_PILL = { 'programada': '', 'por recordar': 'recordar', 'en curso': 'curso', 'vencida': 'vencida', 'hecha': 'hecha' };
 
@@ -177,76 +182,16 @@
   function durOptions(v) { return [[15, '15 min'], [30, '30 min'], [45, '45 min'], [60, '1 hora'], [90, '1 h 30'], [120, '2 horas'], [180, '3 horas'], [240, '4 horas']].map(function (o) { return '<option value="' + o[0] + '"' + sel(o[0], +v) + '>' + o[1] + '</option>'; }).join(''); }
   function remOptions(v) { return [[0, 'A la hora'], [5, '5 min antes'], [10, '10 min antes'], [15, '15 min antes'], [30, '30 min antes'], [60, '1 hora antes'], [120, '2 horas antes'], [1440, '1 día antes']].map(function (o) { return '<option value="' + o[0] + '"' + sel(o[0], +v) + '>' + o[1] + '</option>'; }).join(''); }
 
-  // ───── HOY ─────
-  function vHoy() {
-    var td = today(); var ts = DS.tasks(); var p = DL.progress(ts);
-    var od = DL.overdueList(ts, td); var up = DL.upcoming(ts, td, 7);
-    var cps = DS.checkpoints(); var first = cps[0];
-    var dTo = first ? DL.diffDays(first.windowStart, td) : 0;
-    var now = Date.now();
-    var ag = DL.sortAgenda(DS.agenda().filter(function (a) { return a.date === td || (!a.done && DL.agendaState(a, now) === 'vencida'); }));
-    var h = '<header class="page-head">' +
-      '<p class="kicker">Plan de David · sep 2026 – jun 2027</p>' +
-      '<h1>El <span class="senal">derrotero</span>, paso a paso</h1>' +
-      '<p class="bajada">Qué hacer esta semana, qué va tarde y si el plan llega con evidencia a la decisión de marzo de 2027.</p></header>';
-    h += '<section class="stats plano" aria-label="Resumen">' +
-      '<div class="stat"><span class="label">Avance total</span><span class="fig">' + p.pct + '<small>%</small></span><div class="bar" role="progressbar" aria-valuenow="' + p.pct + '" aria-valuemin="0" aria-valuemax="100"><i style="width:' + p.pct + '%"></i></div><span class="foot">' + p.done + ' de ' + p.total + ' actividades hechas</span></div>' +
-      '<div class="stat' + (od.length ? ' alarm' : '') + '"><span class="label">Vencidas</span><span class="fig">' + od.length + '</span><span class="foot">' + (od.length ? '<a href="#actividades" data-route="actividades" data-tview="vencidas">Ver y reprogramar</a>' : 'Nada con fecha pasada') + '</span></div>' +
-      '<div class="stat"><span class="label">Próximos 7 días</span><span class="fig">' + up.length + '</span><span class="foot">actividades con fecha hasta el ' + DL.fmtDate(DL.addDays(td, 7), { year: false }) + '</span></div>' +
-      '<div class="stat"><span class="label">' + (first ? 'Revisión 1 con IKM' : 'Revisión') + '</span><span class="fig">' + (dTo > 0 ? dTo : 0) + '<small> días</small></span><span class="foot">' + (first ? DL.fmtDate(first.windowStart, { year: false }) + ' – ' + DL.fmtDate(first.windowEnd) : '') + '</span></div>' +
-      '</section>';
-
-    // columna izquierda
-    var left = '<section class="card"><div class="sec-head"><div><p class="kicker">Agenda de hoy</p><h2 class="sec">' + esc(DL.fmtDateLong(td)) + '</h2></div>' +
-      '<button class="btn llama" data-act="go-capture">' + ic('mic') + 'Dictar actividad</button></div>' +
-      (ag.length ? '<div class="ag-day">' + ag.map(function (a) { return aItem(a, { showDate: a.date !== td }); }).join('') + '</div>'
-        : '<p class="empty">No tienes nada agendado hoy. Dicta una actividad y queda con recordatorio.</p>') + '</section>';
-    left += '<section class="card"><div class="sec-head"><div><p class="kicker">Lo que viene</p><h2 class="sec">Próximos 7 días</h2></div><a class="link" href="#actividades" data-route="actividades" data-tview="semana">Ver todo</a></div>' +
-      (up.length ? '<div class="list-plain">' + up.map(function (t) { return taskLi(t, td); }).join('') + '</div>' : '<p class="empty">Nada vence en los próximos 7 días.</p>') + '</section>';
-    if (od.length) left += '<section class="card"><div class="sec-head"><div><p class="kicker">Atención</p><h2 class="sec">Vencidas</h2></div></div><div class="list-plain">' + od.map(function (t) { return taskLi(t, td); }).join('') + '</div></section>';
-
-    // columna derecha
-    var right = '<section class="card"><div class="sec-head"><div><p class="kicker">Puntos de control con IKM</p><h2 class="sec">Veredictos</h2></div><a class="link" href="#control" data-route="control">Evaluar</a></div><div>' +
-      cps.map(function (cp) {
-        var v = DL.verdict(cp.criteria, cp.id);
-        var cls = { ok: 'hecha', partial: 'warn', bad: 'vencida', none: '' }[v.tone];
-        return '<div class="cp-mini"><div><b>' + esc(cp.title) + '</b><div class="mono tenue" style="font-size:12px">' + DL.fmtDate(cp.windowStart, { year: false }) + ' – ' + DL.fmtDate(cp.windowEnd) + '</div></div>' + pill(v.label, cls) + '</div>';
-      }).join('') + '</div>' + cpAlertsHtml(cps, td, true) + '</section>';
-    var defs = DS.kpiDefs(); var vals = DS.kpiValues();
-    right += '<section class="card"><div class="sec-head"><div><p class="kicker">Indicadores</p><h2 class="sec">Contra la meta</h2></div><a class="link" href="#indicadores" data-route="indicadores">Registrar</a></div><div class="stack">' +
-      defs.map(function (d) {
-        var v = vals[d.key] || 0; var pct = Math.min(100, Math.round(v / (d.target || 1) * 100));
-        return '<div class="kpi-mini"><div class="row"><span>' + esc(d.label) + '</span><b class="num">' + v + ' <span class="tenue mono" style="font-size:12px">/ ' + d.target + '</span></b></div><div class="bar"><i style="width:' + pct + '%"></i></div></div>';
-      }).join('') + '</div></section>';
-    var habits = DS.list('habits').sort(function (a, b) { return a.order - b.order; });
-    right += '<section class="card"><div class="sec-head"><div><p class="kicker">Hábitos</p><h2 class="sec">Este periodo</h2></div><a class="link" href="#habitos" data-route="habitos">Ver rachas</a></div><div class="list-plain">' +
-      habits.map(function (hb) {
-        var logs = (S.d.habit_logs[hb.id] || {}).dates || {}; var st = DL.habitStatus(hb, logs, td);
-        return '<div class="li"><label class="check"><input type="checkbox" data-act="habit-toggle" data-id="' + hb.id + '"' + (logs[td] ? ' checked' : '') + ro() + '><span class="sr">Marcar hoy</span></label><span>' + esc(hb.title) + '<br><span class="tenue" style="font-size:13px">' + esc(hb.when) + '</span></span><span class="pill ' + (st.done ? 'hecha' : '') + '">' + st.count + '/' + st.target + '</span></div>';
-      }).join('') + '</div></section>';
-
-    return h + '<div class="split"><div class="stack">' + left + '</div><div class="stack">' + right + '</div></div>';
-  }
-
-  function taskLi(t, td) {
-    return '<div class="li">' + statusBtn(t) + '<span><button class="link" style="color:var(--tinta);text-decoration:none;font-weight:500;text-align:left" data-act="goto-task" data-id="' + t.id + '">' + esc(t.title) + '</button><br><span class="front-tag">' + esc(t.front) + '</span> <span class="tenue" style="font-size:13px">· ' + esc(t.owner) + '</span></span><span class="d' + (DL.isOverdue(t, td) ? ' bad' : '') + '">' + (DL.isOverdue(t, td) ? 'vencida · ' : '') + DL.fmtDate(t.due, { year: false }) + '</span></div>';
-  }
-
-  function cpAlertsHtml(cps, td, compact) {
-    var out = [];
-    cps.forEach(function (cp) {
-      DL.checkpointAlerts(cp, td).forEach(function (a) { if (!compact || a.tone !== 'info') out.push('<div class="banner ' + (a.tone === 'bad' ? 'bad' : a.tone === 'info' ? 'info' : 'warn') + '"><span>' + (compact ? '<b>' + esc(cp.title.split(' · ')[0]) + ':</b> ' : '') + esc(a.text) + '</span></div>'); });
-    });
-    return out.length ? '<div class="stack" style="gap:8px">' + out.join('') + '</div>' : '';
-  }
+  // ───── HOY: vive en dash.js (camino del plan e indicadores gráficos) ─────
+  function vHoy() { return ''; }
 
   // ───── AGENDA ─────
   function captureHtml() {
-    var ex = ['Mañana a las 3 de la tarde reunión con Cristian, recuérdame 30 minutos antes', 'El lunes a las 5 llamar a dos headhunters', 'Revisar el portafolio el viernes en la tarde', 'En 20 minutos publicar el post de LinkedIn'];
+    var ex = ['El jueves a las 10 primera sesión de entendimiento con cliente, recuérdame 30 minutos antes', 'El lunes a las 5 llamar a dos headhunters', 'Revisar el portafolio el viernes en la tarde', 'En 20 minutos publicar el post de LinkedIn'];
     var h = '<section class="capture plano" id="capture">' +
       '<div><p class="kicker">Agenda por voz</p><h2>Dilo y queda <span class="senal">agendado</span></h2></div>' +
       '<div class="capture-input"><label class="sr" for="cap-text">Actividad dictada o escrita</label>' +
-      '<textarea id="cap-text" rows="2" placeholder="Ej.: mañana a las 3 de la tarde reunión con Cristian, recuérdame 30 minutos antes"' + ro() + '>' + esc(U.capText) + '</textarea>' +
+      '<textarea id="cap-text" rows="2" placeholder="Ej.: el jueves a las 10 primera sesión de entendimiento con cliente, recuérdame 30 minutos antes"' + ro() + '>' + esc(U.capText) + '</textarea>' +
       '<button type="button" class="mic' + (U.listening ? ' on' : '') + '" data-act="mic" aria-label="' + (U.listening ? 'Detener dictado' : 'Dictar con el micrófono') + '" aria-pressed="' + U.listening + '"' + ro() + '>' + ic('mic') + '</button>' +
       '<button type="button" class="btn llama" data-act="parse"' + ro() + '>Interpretar</button></div>' +
       '<p class="hint" id="mic-msg" aria-live="polite">' + esc(U.micMsg || 'Toca el micrófono o usa el dictado del teclado de tu celular. La frase se convierte en actividad con fecha, hora y recordatorio.') + '</p>' +
@@ -295,11 +240,15 @@
     } else {
       if (venc.length) h += '<div class="banner bad">' + venc.length + (venc.length === 1 ? ' actividad venció' : ' actividades vencieron') + ' sin marcarse como hechas. <button class="link" data-act="ag-view" data-v="vencidas">Revisarlas</button></div>';
       var groups = {};
-      open.forEach(function (a) { (groups[a.date] = groups[a.date] || []).push(a); });
+      open.forEach(function (a) { (groups[a.date] = groups[a.date] || []).push({ a: a, k: a.time || '00:00' }); });
+      var horizon = DL.addDays(td, 14);
+      DS.calendar().forEach(function (e) { if (e.date >= td && e.date <= horizon) (groups[e.date] = groups[e.date] || []).push({ c: e, k: e.time || '00:00' }); });
       var days = Object.keys(groups).sort();
       h += days.length ? days.map(function (d) {
-        return '<div class="ag-day"><div class="ag-day-h"><h3>' + esc(cap(DL.relDay(d, td))) + '</h3><span class="mono tenue">' + DL.fmtDate(d, { weekday: true }) + '</span></div>' + groups[d].map(function (a) { return aItem(a); }).join('') + '</div>';
+        var items = groups[d].sort(function (x, z) { return x.k.localeCompare(z.k); });
+        return '<div class="ag-day"><div class="ag-day-h"><h3>' + esc(cap(DL.relDay(d, td))) + '</h3><span class="mono tenue">' + DL.fmtDate(d, { weekday: true }) + '</span></div>' + items.map(function (x) { return x.a ? aItem(x.a) : calItem(x.c); }).join('') + '</div>';
       }).join('') : '<p class="empty">No hay nada pendiente en la agenda. Dicta la próxima actividad arriba.</p>';
+      if (S.cal.status === 'ok') h += '<p class="hint">Los eventos de tu calendario aparecen hasta 14 días adelante; en la vista Mes, todos. Se editan en tu calendario.</p>';
       if (done.length) {
         h += '<div><button class="link" data-act="toggle-done">' + (U.showDone ? 'Ocultar' : 'Ver') + ' las ' + done.length + ' últimas hechas</button></div>';
         if (U.showDone) h += '<div class="ag-day">' + done.map(function (a) { return aItem(a, { showDate: true }); }).join('') + '</div>';
@@ -329,24 +278,27 @@
     var byDay = {};
     DS.agenda().forEach(function (a) { (byDay[a.date] = byDay[a.date] || []).push({ a: a }); });
     DS.tasks().forEach(function (t) { if (t.due && t.status !== 'hecha') (byDay[t.due] = byDay[t.due] || []).push({ t: t }); });
+    DS.calendar().forEach(function (e) { if (e.date >= start && e.date <= end) (byDay[e.date] = byDay[e.date] || []).push({ c: e }); });
     var selDay = U.agDay || td;
     var h = '<div class="row between"><div class="row"><button class="btn alt sm" data-act="month" data-d="-1" aria-label="Mes anterior">‹</button><h2 class="sec" style="min-width:12ch;text-align:center">' + DL.MESES[m - 1] + ' ' + y + '</h2><button class="btn alt sm" data-act="month" data-d="1" aria-label="Mes siguiente">›</button></div><button class="btn alt sm" data-act="month" data-d="0">Hoy</button></div>';
     h += '<div class="month" role="grid">' + ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'].map(function (d) { return '<div class="dow">' + d + '</div>'; }).join('');
     for (var d = start; d <= end; d = DL.addDays(d, 1)) {
       var evs = (byDay[d] || []);
-      evs.sort(function (x, z) { return (x.a ? (x.a.time || '00') : '99').localeCompare(z.a ? (z.a.time || '00') : '99'); });
+      evs.sort(function (x, z) { var kx = x.a ? (x.a.time || '00') : x.c ? (x.c.time || '00') : '99', kz = z.a ? (z.a.time || '00') : z.c ? (z.c.time || '00') : '99'; return kx.localeCompare(kz); });
       h += '<button class="cell' + (d.slice(0, 7) !== base ? ' out' : '') + (d === td ? ' today' : '') + '" data-act="day" data-d="' + d + '"' + pressed(d === selDay) + ' aria-label="' + DL.fmtDateLong(d) + ', ' + evs.length + ' elementos"><span class="d">' + (+d.slice(8)) + '</span>' +
         evs.slice(0, 3).map(function (e) {
           if (e.a) { var st = DL.agendaState(e.a, now); return '<span class="ev' + (st === 'vencida' ? ' bad' : '') + (e.a.done ? ' done' : '') + '">' + (e.a.time ? e.a.time + ' ' : '') + esc(e.a.title) + '</span>'; }
+          if (e.c) return '<span class="ev cal">' + (e.c.time ? e.c.time + ' ' : '') + esc(e.c.title) + '</span>';
           return '<span class="ev task' + (DL.isOverdue(e.t, td) ? ' bad' : '') + '">' + esc(e.t.title) + '</span>';
         }).join('') + (evs.length > 3 ? '<span class="mono tenue" style="font-size:11px">+' + (evs.length - 3) + ' más</span>' : '') +
-        '<span class="dots">' + evs.slice(0, 5).map(function (e) { return '<i class="' + (e.t ? 'task' : '') + ((e.a && DL.agendaState(e.a, now) === 'vencida') || (e.t && DL.isOverdue(e.t, td)) ? ' bad' : '') + '"></i>'; }).join('') + '</span></button>';
+        '<span class="dots">' + evs.slice(0, 5).map(function (e) { return '<i class="' + (e.t ? 'task' : e.c ? 'cal' : '') + ((e.a && DL.agendaState(e.a, now) === 'vencida') || (e.t && DL.isOverdue(e.t, td)) ? ' bad' : '') + '"></i>'; }).join('') + '</span></button>';
     }
     h += '</div>';
     var list = byDay[selDay] || [];
     h += '<div class="ag-day"><div class="ag-day-h"><h3>' + esc(cap(DL.relDay(selDay, td))) + '</h3><span class="mono tenue">' + DL.fmtDate(selDay, { weekday: true }) + '</span></div>' +
       (list.length ? list.map(function (e) {
         if (e.a) return aItem(e.a);
+        if (e.c) return calItem(e.c);
         return '<div class="aitem task-due"><div class="when">Vence</div><div class="what"><b>' + esc(e.t.title) + '</b><div class="row">' + pill(e.t.status, statusClass(e.t.status)) + '<span class="front-tag">' + esc(e.t.front) + '</span><span class="tenue" style="font-size:13px">' + esc(e.t.owner) + '</span></div></div><div class="acts"><button class="btn alt sm" data-act="goto-task" data-id="' + e.t.id + '">Abrir</button></div></div>';
       }).join('') : '<p class="empty">Nada este día.</p>') + '</div>';
     return h;
@@ -452,47 +404,6 @@
     var td = today(); var ph = DS.phases();
     for (var i = 0; i < ph.length; i++) if (td >= ph[i].start && td <= ph[i].end) return ph[i].id;
     return ph.length ? ph[0].id : '';
-  }
-
-  // ───── PUNTOS DE CONTROL ─────
-  function vControl() {
-    var td = today(); var cps = DS.checkpoints();
-    var h = '<header class="page-head"><p class="kicker">Decisión central del plan</p><h1>Seguir en IKM con <span class="senal">evidencia</span></h1>' +
-      '<p class="bajada">Tres condiciones: comisiones pagadas, más ventas y deuda cubierta. Tres de tres: quedarse tiene sentido. Menos de tres en enero activa la búsqueda de empleo; en marzo, el plan de salida.</p></header>';
-    h += '<div class="grid g2">' + cps.map(function (cp) { return cpCard(cp, td); }).join('') + '</div>';
-    var decs = DS.list('decisions').filter(function (d) { return d.kind !== 'modos'; }).sort(function (a, b) { return b.at - a.at; });
-    h += '<section class="card"><div><p class="kicker">Historial</p><h2 class="sec">Decisiones registradas</h2></div>' +
-      (decs.length ? '<div class="table-wrap"><table><thead><tr><th>Fecha</th><th>Punto de control</th><th>Veredicto calculado</th><th>Decisión</th><th>Justificación</th></tr></thead><tbody>' +
-        decs.map(function (d) { return '<tr><td class="mono">' + DL.fmtDate(d.date) + '</td><td>' + esc(d.checkpointTitle || d.checkpointId) + '</td><td>' + esc(d.verdict || '') + '</td><td><b>' + esc(d.option) + '</b></td><td>' + esc(d.justification) + '</td></tr>'; }).join('') + '</tbody></table></div>'
-        : '<p class="empty">Todavía no hay decisiones. Se registran al cerrar cada punto de control.</p>') + '</section>';
-    return h;
-  }
-
-  function cpCard(cp, td) {
-    var v = DL.verdict(cp.criteria, cp.id); var d = DL.diffDays(cp.windowStart, td);
-    var conflict = U.conflict['cp:' + cp.id];
-    var h = '<section class="card plano" id="cp-' + cp.id + '"><div class="sec-head"><div><p class="kicker">' + DL.fmtDate(cp.windowStart, { year: false }) + ' – ' + DL.fmtDate(cp.windowEnd) + '</p><h2 class="sec">' + esc(cp.title) + '</h2></div>' +
-      pill(d > 0 ? 'faltan ' + d + ' días' : td <= cp.windowEnd ? 'ventana abierta' : 'ventana cerrada', d > 0 ? '' : td <= cp.windowEnd ? 'llama' : '') + '</div>';
-    h += cpAlertsHtml([cp], td, false);
-    DL.CRITERIA.forEach(function (k) {
-      var c = cp.criteria[k] || {}; var val = c.value || 'pendiente';
-      h += '<div class="crit"><div class="row between"><b>' + esc(c.label || k) + '</b><div class="seg" role="group" aria-label="' + esc(c.label || k) + '">' +
-        [['si', 'Sí'], ['parcial', 'Parcial'], ['no', 'No']].map(function (o) { return '<button class="' + o[0] + '" data-act="crit" data-cp="' + cp.id + '" data-k="' + k + '" data-v="' + o[0] + '"' + pressed(val === o[0]) + ro() + '>' + o[1] + '</button>'; }).join('') + '</div></div>' +
-        '<label class="field"><span>Criterio medible</span><input class="in" id="cm-' + cp.id + '-' + k + '" data-crit="' + cp.id + '|' + k + '|measurable" value="' + esc(c.measurable || '') + '" placeholder="' + (k === 'ventas' ? 'Ej.: ventas nuevas de IKM ≥ la cifra que tú definas' : k === 'deuda' ? 'Ej.: monto y fecha en que se cubre la deuda' : 'Ej.: comisiones del periodo pagadas al 100 %') + '"' + ro() + '></label>' +
-        '<div class="form-grid"><label class="field"><span>Evidencia</span><input class="in" id="ce-' + cp.id + '-' + k + '" data-crit="' + cp.id + '|' + k + '|evidence" value="' + esc(c.evidence || '') + '" placeholder="Qué lo demuestra"' + ro() + '></label>' +
-        '<label class="field"><span>Enlace</span><input class="in" type="url" id="cl-' + cp.id + '-' + k + '" data-crit="' + cp.id + '|' + k + '|link" value="' + esc(c.link || '') + '" placeholder="https://"' + ro() + '></label></div>' +
-        (c.link && /^https:\/\//.test(c.link) ? '<a href="' + esc(c.link) + '" target="_blank" rel="noopener" style="font-size:13.5px">Abrir evidencia</a>' : '') + '</div>';
-    });
-    h += '<div class="verdict ' + v.tone + '" aria-live="polite"><span class="kicker" style="color:inherit">Veredicto calculado · ' + v.yes + ' de 3 en sí</span><strong>' + esc(v.label) + '</strong><span>' + esc(v.detail) + '</span></div>';
-    if (conflict) h += conflictHtml('cp:' + cp.id, conflict);
-    h += '<label class="field"><span>Notas del punto de control</span><textarea class="in" id="cpn-' + cp.id + '" data-cp-note="' + cp.id + '" rows="3"' + ro() + '>' + esc(cp.note || '') + '</textarea></label>';
-    h += '<form class="stack" data-form="decision" data-cp="' + cp.id + '" style="gap:12px;border-top:1px solid var(--filete);padding-top:16px"><p class="kicker">Registrar la decisión (la tomas tú)</p><div class="form-grid">' +
-      '<label class="field"><span>Decisión</span><select class="in" name="option" id="dec-opt-' + cp.id + '"' + ro() + '>' +
-      ['Me quedo en IKM', 'Activo la búsqueda de empleo', 'Ejecuto el plan de salida', 'Quedo como consultor asociado de IKM', 'Aplazo con fecha nueva'].map(function (o) { return '<option>' + o + '</option>'; }).join('') + '</select></label>' +
-      '<label class="field"><span>Fecha</span><input class="in" type="date" name="date" id="dec-date-' + cp.id + '" value="' + td + '"' + ro() + '></label></div>' +
-      '<label class="field"><span>Justificación</span><textarea class="in" name="justification" id="dec-j-' + cp.id + '" rows="2" required placeholder="Por qué, con qué evidencia"' + ro() + '></textarea></label>' +
-      '<div><button class="btn petrol" type="submit"' + ro() + '>Registrar decisión</button></div></form>';
-    return h + '</section>';
   }
 
   // ───── INDICADORES ─────
@@ -676,7 +587,7 @@
   function summaryText() {
     var td = today();
     return DL.weeklySummary({
-      tasks: DS.tasks(), kpiDefs: DS.kpiDefs(), kpiValues: DS.kpiValues(), checkpoints: DS.checkpoints(),
+      tasks: DS.tasks(), kpiDefs: DS.kpiDefs(), kpiValues: DS.kpiValues(),
       habits: DS.list('habits').sort(function (a, b) { return a.order - b.order; }),
       habitLogs: Object.keys(S.d.habit_logs).reduce(function (m, k) { m[k] = (S.d.habit_logs[k] || {}).dates || {}; return m; }, {}),
       agenda: DS.agenda()
@@ -720,7 +631,8 @@
   // ───── AJUSTES ─────
   function vAjustes() {
     var cfg = DS.config();
-    var h = '<header class="page-head"><p class="kicker">Configuración editable</p><h1><span class="senal">Ajustes</span> del plan</h1><p class="bajada">Etapas, frentes, metas y ventanas de revisión viven en la base de datos: se cambian aquí, sin programar.</p></header>';
+    var h = '<header class="page-head"><p class="kicker">Configuración editable</p><h1><span class="senal">Ajustes</span> del plan</h1><p class="bajada">Conexiones, etapas, frentes y metas: se cambian aquí, sin programar.</p></header>';
+    h += connectionsHtml();
     h += '<section class="card"><div><p class="kicker">Etapas</p><h2 class="sec">Fechas de cada etapa</h2></div>' + (cfg.phaseDatesNote ? '<p class="hint">' + esc(cfg.phaseDatesNote) + '</p>' : '') +
       '<div class="table-wrap"><table><thead><tr><th>Título</th><th>Inicio</th><th>Fin</th></tr></thead><tbody>' +
       DS.phases().map(function (p) { return '<tr><td><input class="in" id="ph-t-' + p.id + '" data-cfg="phase|' + p.id + '|title" value="' + esc(p.title) + '"' + ro() + '></td><td><input class="in" type="date" id="ph-s-' + p.id + '" data-cfg="phase|' + p.id + '|start" value="' + p.start + '"' + ro() + '></td><td><input class="in" type="date" id="ph-e-' + p.id + '" data-cfg="phase|' + p.id + '|end" value="' + p.end + '"' + ro() + '></td></tr>'; }).join('') + '</tbody></table></div></section>';
@@ -730,22 +642,36 @@
     h += '<section class="card"><div><p class="kicker">Indicadores</p><h2 class="sec">Metas y plazos</h2></div><div class="table-wrap"><table><thead><tr><th>Indicador</th><th>Meta</th><th>Plazo</th></tr></thead><tbody>' +
       DS.kpiDefs().map(function (k) { return '<tr><td><input class="in" id="kp-l-' + k.key + '" data-cfg="kpi|' + k.key + '|label" value="' + esc(k.label) + '"' + ro() + '></td><td><input class="in" style="width:96px" type="number" min="1" id="kp-t-' + k.key + '" data-cfg="kpi|' + k.key + '|target" value="' + k.target + '"' + ro() + '></td><td><input class="in" type="date" id="kp-d-' + k.key + '" data-cfg="kpi|' + k.key + '|due" value="' + k.due + '"' + ro() + '></td></tr>'; }).join('') + '</tbody></table></div>' +
       '<form class="row" data-form="add-kpi"><label class="sr" for="nk-label">Nuevo indicador</label><input class="in" style="max-width:280px" id="nk-label" name="label" placeholder="Nuevo indicador" required' + ro() + '><input class="in" style="max-width:110px" type="number" min="1" name="target" id="nk-target" placeholder="Meta" required' + ro() + '><input class="in" style="max-width:170px" type="date" name="due" id="nk-due" required' + ro() + '><button class="btn alt" type="submit"' + ro() + '>' + ic('plus') + 'Agregar</button></form></section>';
-    h += '<section class="card"><div><p class="kicker">Puntos de control</p><h2 class="sec">Ventanas de revisión</h2></div><div class="table-wrap"><table><thead><tr><th>Título</th><th>Desde</th><th>Hasta</th></tr></thead><tbody>' +
-      DS.checkpoints().map(function (c) { return '<tr><td><input class="in" id="cw-t-' + c.id + '" data-cfg="cp|' + c.id + '|title" value="' + esc(c.title) + '"' + ro() + '></td><td><input class="in" type="date" id="cw-s-' + c.id + '" data-cfg="cp|' + c.id + '|windowStart" value="' + c.windowStart + '"' + ro() + '></td><td><input class="in" type="date" id="cw-e-' + c.id + '" data-cfg="cp|' + c.id + '|windowEnd" value="' + c.windowEnd + '"' + ro() + '></td></tr>'; }).join('') + '</tbody></table></div></section>';
     h += '<section class="card hondo"><div><p class="kicker">Datos</p><h2 class="sec">Respaldo y exportación</h2></div>' +
       '<p class="muted">' + (S.mode === 'db' ? 'La app guarda un respaldo diario dentro de la base de datos y conserva los últimos 14 días.' : 'Estás en modo local: los datos viven solo en este navegador.') + '</p>' +
       '<div class="row"><button class="btn petrol" data-act="export-json">' + ic('download') + 'Exportar todo a JSON</button>' + (S.mode === 'db' ? '<button class="btn alt" data-act="backups">Ver respaldos diarios</button>' : '<button class="btn alt" data-act="reset-local">Volver al plan base</button>') + '</div>' +
       (U.exportMsg && U.route === 'ajustes' ? '<p class="hint">' + esc(U.exportMsg) + '</p>' : '') +
       (U.backups ? (U.backups.length ? '<div class="list-plain">' + U.backups.map(function (b) { return '<div class="li"><span class="d">' + DL.fmtDate(b.day) + '</span><span>Respaldo completo</span><button class="btn alt sm" data-act="backup-dl" data-d="' + b.day + '">' + ic('download') + 'JSON</button></div>'; }).join('') + '</div>' : '<p class="hint">Aún no hay respaldos. El primero se crea hoy.</p>') : '') + '</section>';
-    h += '<section class="card"><div><p class="kicker">Acceso para Claude y Emilia</p><h2 class="sec">Cómo leen y escriben el plan</h2></div>' +
-      '<p class="muted">Claude lee y actualiza este plan directamente sobre la base de datos del artefacto (colecciones <span class="mono">tasks</span>, <span class="mono">agenda</span>, <span class="mono">kpis</span>, <span class="mono">kpi_events</span>, <span class="mono">checkpoints</span>, <span class="mono">habits</span>). Pídele en una conversación: "marca t04 como hecha" o "agenda el martes a las 5 la reunión con mi esposa". Los cambios de Claude quedan en la bitácora como "Claude".</p>' +
-      '<p class="muted">Colaboradores: comparte la app como Lector (solo lectura) a tu esposa o a Cristian. Solo tú y los editores pueden cambiar datos.</p></section>';
+    if (S.backend === 'artefacto') {
+      h += '<section class="card"><div><p class="kicker">Acceso para Claude y Emilia</p><h2 class="sec">Cómo leen y escriben el plan</h2></div>' +
+        '<p class="muted">Claude lee y actualiza este plan directamente sobre la base de datos del artefacto (colecciones <span class="mono">tasks</span>, <span class="mono">agenda</span>, <span class="mono">kpis</span>, <span class="mono">kpi_events</span>, <span class="mono">habits</span>). Los cambios de Claude quedan en la bitácora como "Claude".</p></section>';
+    }
     return h;
+  }
+
+  function connectionsHtml() {
+    if (S.backend === 'artefacto') return '';
+    var db = S.mode === 'db'
+      ? '<div class="conn-row ok"><span class="dot"></span><div><b>Base de datos conectada</b><span>Postgres (Neon) en Vercel. Lo que registras aquí aparece en el celular y en el computador.' + (S.offline ? ' Ahora mismo sin conexión.' : '') + '</span></div></div>'
+      : '<div class="conn-row"><span class="dot off"></span><div><b>Base de datos sin conectar</b><span>Los cambios quedan solo en este navegador. Para conectarla (gratis): en Vercel abre el proyecto <span class="mono">derrotero</span> → <b>Storage</b> → <b>Create Database</b> → <b>Neon</b> (plan Free) → <b>Connect</b>. Vercel crea la variable <span class="mono">DATABASE_URL</span> y redespliega. Al abrir de nuevo, la app te ofrece subir lo que tengas en este navegador.</span></div></div>';
+    var c = S.cal;
+    var calTxt = c.status === 'ok'
+      ? '<div class="conn-row ok"><span class="dot"></span><div><b>Calendario conectado</b><span>' + c.events.length + ' eventos leídos' + (c.calendars > 1 ? ' de ' + c.calendars + ' calendarios' : '') + (c.fetchedAt ? ' · actualizado ' + DL.fmtTime(DL.nowTimeBogota(c.fetchedAt)) : '') + '. Solo lectura: título, fecha y hora.' + (c.errors && c.errors.length ? ' Un calendario no respondió.' : '') + '</span></div></div>'
+      : '<div class="conn-row"><span class="dot off"></span><div><b>Calendario sin conectar</b><span>' + (c.status === 'error' || c.status === 'unreachable' ? 'La dirección configurada no respondió. Revísala. ' : '') +
+        'Google Calendar: Configuración → tu calendario → <b>Integrar el calendario</b> → copia la <b>Dirección secreta en formato iCal</b>. Outlook: Configuración → Calendario → Calendarios compartidos → <b>Publicar un calendario</b> → enlace ICS. Pégala en Vercel → proyecto <span class="mono">derrotero</span> → Settings → Environment Variables → <span class="mono">CALENDAR_ICS_URL</span> (varias, separadas por coma) y redespliega. La dirección no pasa por el navegador.</span></div></div>';
+    return '<section class="card"><div class="sec-head"><div><p class="kicker">Conexiones</p><h2 class="sec">Base de datos y calendario</h2></div>' +
+      '<button class="btn alt sm" data-act="cal-refresh">Actualizar calendario</button></div>' + db + calTxt +
+      '<p class="hint">Para agregar a tu calendario lo que dictas, usa los botones de Google Calendar u Outlook de cada actividad, o exporta la agenda (.ics con alarmas).</p></section>';
   }
 
   root.DU = {
     U: U, esc: esc, ic: ic, NAV: NAV, TITLES: TITLES, navHtml: navHtml, tabbarHtml: tabbarHtml, connHtml: connHtml, stampHtml: stampHtml,
-    captureHtml: captureHtml, summaryText: summaryText,
-    views: { hoy: vHoy, agenda: vAgenda, actividades: vActividades, control: vControl, indicadores: vIndicadores, habitos: vHabitos, semana: vSemana, frentes: vFrentes, laboratorio: vLab, resumen: vResumen, bitacora: vBitacora, ajustes: vAjustes }
+    captureHtml: captureHtml, summaryText: summaryText, aItem: aItem, pill: pill,
+    views: { hoy: vHoy, agenda: vAgenda, actividades: vActividades, indicadores: vIndicadores, habitos: vHabitos, semana: vSemana, frentes: vFrentes, laboratorio: vLab, resumen: vResumen, bitacora: vBitacora, ajustes: vAjustes }
   };
 })(window);

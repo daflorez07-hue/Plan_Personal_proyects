@@ -207,41 +207,6 @@
     });
   }
 
-  // ───────────────────────── puntos de control ─────────────────────────
-
-  var CRITERIA = ['comisiones', 'ventas', 'deuda'];
-
-  function critValue(c) { return c && typeof c === 'object' ? c.value : c; }
-
-  /** RN-02: veredicto a partir de las tres condiciones. */
-  function verdict(criteria, key) {
-    var vals = CRITERIA.map(function (k) { return critValue(criteria && criteria[k]) || 'pendiente'; });
-    var yes = vals.filter(function (v) { return v === 'si'; }).length;
-    var evaluated = vals.filter(function (v) { return v !== 'pendiente'; }).length;
-    var consequence = key === 'mar-2027' ? 'Ejecutar el plan de salida.' : 'Activa la búsqueda de empleo.';
-    if (evaluated === 0) return { tone: 'none', yes: 0, evaluated: 0, label: 'Sin evaluar', detail: 'Marca las tres condiciones para obtener el veredicto.' };
-    if (yes === 3) return { tone: 'ok', yes: yes, evaluated: evaluated, label: 'Quedarse tiene sentido', detail: 'Las tres condiciones se cumplen.' };
-    if (yes === 0) return { tone: 'bad', yes: 0, evaluated: evaluated, label: 'No se cumple', detail: consequence };
-    return { tone: 'partial', yes: yes, evaluated: evaluated, label: 'Cumplimiento parcial (' + yes + ' de 3)', detail: consequence };
-  }
-
-  /** RN-06 y excepción 2.8: alertas de un punto de control. */
-  function checkpointAlerts(cp, today) {
-    var out = [];
-    var crit = cp.criteria || {};
-    var missing = CRITERIA.filter(function (k) { return !String((crit[k] && crit[k].measurable) || '').trim(); });
-    if (missing.length && today <= cp.windowEnd) {
-      out.push({ tone: 'warn', text: 'Falta el criterio medible de: ' + missing.join(', ') + '. Escríbelo antes del ' + fmtDate(cp.windowStart) + '.' });
-    }
-    var pending = CRITERIA.filter(function (k) { return (critValue(crit[k]) || 'pendiente') === 'pendiente'; });
-    if (today > cp.windowEnd && pending.length) {
-      out.push({ tone: 'bad', text: 'La ventana cerró el ' + fmtDate(cp.windowEnd) + ' y quedan condiciones sin evaluar.' });
-    } else if (today >= cp.windowStart && today <= cp.windowEnd) {
-      out.push({ tone: 'info', text: 'Ventana de revisión abierta hasta el ' + fmtDate(cp.windowEnd) + '.' });
-    }
-    return out;
-  }
-
   // ───────────────────────── indicadores ─────────────────────────
 
   /** RN-05: nunca por debajo de cero. */
@@ -688,14 +653,6 @@
     if (!up.length && !ag.length) L.push('  Nada programado.');
     up.forEach(function (t) { L.push('  · ' + fmtDate(t.due, { year: false, weekday: true }) + ' — ' + t.title + ' (' + t.owner + ')'); });
     ag.forEach(function (a) { L.push('  · ' + fmtDate(a.date, { year: false, weekday: true }) + (a.time ? ' ' + fmtTime(a.time) : '') + ' — ' + a.title + ' [agenda]'); });
-    if (s.checkpoints && s.checkpoints.length) {
-      L.push('');
-      L.push('PUNTOS DE CONTROL CON IKM');
-      s.checkpoints.forEach(function (cp) {
-        var v = verdict(cp.criteria, cp.id);
-        L.push('  · ' + cp.title + ' (' + fmtDate(cp.windowStart, { year: false }) + ' – ' + fmtDate(cp.windowEnd) + '): ' + v.label);
-      });
-    }
     if (s.habits && s.habits.length) {
       L.push('');
       L.push('HÁBITOS');
@@ -759,14 +716,13 @@
 
   var DL = {
     TZ_OFFSET_MIN: TZ_OFFSET_MIN, MESES: MESES, MESES_CORTO: MESES_CORTO, DIAS: DIAS, DIAS_CORTO: DIAS_CORTO,
-    STATUSES: STATUSES, MODOS: MODOS, MAX_CONSTRUIR: MAX_CONSTRUIR, CRITERIA: CRITERIA,
+    STATUSES: STATUSES, MODOS: MODOS, MAX_CONSTRUIR: MAX_CONSTRUIR,
     pad: pad, todayBogota: todayBogota, nowTimeBogota: nowTimeBogota, bogotaEpoch: bogotaEpoch, isDateStr: isDateStr,
     addDays: addDays, diffDays: diffDays, weekday: weekday, mondayOf: mondayOf, isoWeekKey: isoWeekKey,
     fmtDate: fmtDate, fmtDateLong: fmtDateLong, fmtTime: fmtTime, fmtCOP: fmtCOP, fmtNum: fmtNum, relDay: relDay,
     quarterOf: quarterOf, quarterEnd: quarterEnd, quarterLabel: quarterLabel, lastDayOfMonth: lastDayOfMonth,
     isOverdue: isOverdue, nextStatus: nextStatus, validateStatusChange: validateStatusChange, sortTasks: sortTasks,
     progress: progress, nextOrder: nextOrder, reorder: reorder, upcoming: upcoming, overdueList: overdueList, filterTasks: filterTasks,
-    critValue: critValue, verdict: verdict, checkpointAlerts: checkpointAlerts,
     clampKpi: clampKpi, applyKpiDelta: applyKpiDelta, kpiSeries: kpiSeries,
     checkModeChange: checkModeChange,
     periodKey: periodKey, habitStreak: habitStreak, habitStatus: habitStatus, isScheduledDay: isScheduledDay,

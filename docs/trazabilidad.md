@@ -1,4 +1,11 @@
-# Trazabilidad de requisitos · versión 1 (26 sep 2026)
+# Trazabilidad de requisitos · versión 2 (28 sep 2026)
+
+## Cambios de la versión 2 (pedido de David, 28 sep 2026)
+- Se retira el módulo **Puntos de control** (RF-03, RN-02, RN-06, H-06). Las fechas de revisión (15 ene) y decisión (31 mar) siguen como actividades t21 y t26.
+- **Hoy** pasa a tablero gráfico con el camino del plan.
+- Despliegue en **Vercel** con base **Postgres (Neon, gratis)** y lectura del **calendario** por iCal.
+- Ejemplo de dictado: "primera sesión de entendimiento con cliente".
+
 
 ## Decisión de arquitectura
 El documento sugería Next.js + PostgreSQL + Vercel. Se construyó como **artefacto de Claude con base de documentos propia** porque la instrucción fue dejarla lista y publicada en esta sesión, y ese stack exige credenciales que solo David puede escribir (regla 4) y aprobación de despliegue a producción. Consecuencias:
@@ -12,15 +19,15 @@ El documento sugería Next.js + PostgreSQL + Vercel. Se construyó como **artefa
 | 1 | 29 actividades, 3 hechas, 10 %, vencidas según Bogotá | Cumple | `test/logic.test.js`, `test/e2e.js` |
 | 2 | Toque pendiente → en curso queda en la bitácora | Cumple | e2e |
 | 3 | Bloqueada no cambia con el toque; pide confirmación | Cumple | e2e |
-| 4 | 3 sí → verde; 2 sí → "cumplimiento parcial (2 de 3)" | Cumple | lógica + e2e |
+| 4 | 3 sí → verde; 2 sí → "cumplimiento parcial (2 de 3)" | **Retirado en v2** | El módulo se eliminó a pedido de David |
 | 5 | + crea movimiento fechado y la gráfica lo refleja | Cumple | e2e |
 | 6 | Tercer frente en Construir muestra la advertencia RN-03 | Cumple | lógica + e2e |
 | 7 | API rechaza sin token y permite con token | **No aplica en esta arquitectura** | El acceso lo controla la plataforma: escribir exige ser dueño o editor (verificado: un colaborador sin edición recibe rechazo) |
-| 8 | 360 px sin desplazamiento horizontal | Cumple | e2e recorre las 12 vistas |
-| 9 | Sin secretos en el repositorio | Cumple | búsqueda antes del commit; no hay `.env` porque no hay credenciales |
+| 8 | 360 px sin desplazamiento horizontal | Cumple | e2e recorre las 11 vistas en 360 px (local) y 390 px (Vercel) |
+| 9 | Sin secretos en el repositorio | Cumple | búsqueda antes del commit; `.env.example` sin valores; `DATABASE_URL` y `CALENDAR_ICS_URL` viven en Vercel |
 
 ## Requisitos funcionales
-RF-01 a RF-12: implementados. RF-13 y RF-14: pendientes (ver decisión de arquitectura).
+RF-01, RF-02 y RF-04 a RF-12: implementados. RF-03: retirado en v2. RF-13 y RF-14: pendientes (ver decisión de arquitectura).
 
 ## Limitaciones conocidas del visor
 - **Micrófono:** el visor de artefactos puede bloquear el micrófono de la página. La app lo intenta y, si no hay acceso, indica usar el dictado del teclado del celular.
@@ -29,8 +36,8 @@ RF-01 a RF-12: implementados. RF-13 y RF-14: pendientes (ver decisión de arquit
 - **Google Calendar:** el enlace crea el evento con el aviso predeterminado de tu calendario; el `.ics` sí lleva el aviso exacto que elegiste.
 
 ## Decisiones que necesito de David
-1. `[DATO REQUERIDO]` Cifra de "más ventas" y esquema de la deuda (criterios medibles), antes del 11 ene 2027. Se escriben en Puntos de control.
+1. `[DATO REQUERIDO]` Cifra de "más ventas" y esquema de la deuda (criterios medibles), antes del 11 ene 2027. Se escriben en las notas de la actividad "Revisión 1 con IKM" (el módulo Puntos de control se retiró a pedido de David el 28 sep 2026).
 2. `[POR CONFIRMAR]` Día del comité financiero mensual (4 horas) para la semana tipo.
 3. `[SUPUESTO DECLARADO]` Fechas de inicio y fin de cada etapa, duración del gimnasio (1 h), del comité de socios (1 h) y horario del bloque de familia del sábado. Editables en Ajustes y Semana tipo.
 4. `[DATO REQUERIDO]` Criterio de salida de ZONAL y de Berry Lab.
-5. Si se quiere RF-13 (API con token para Emilia fuera de Claude): aprobar el despliegue en Vercel + Supabase y escribir las credenciales en las variables de entorno.
+5. Base de datos en Vercel: conectar Neon (Storage → Create Database) y escribir `CALENDAR_ICS_URL`. Ambas se configuran en Vercel; ninguna credencial pasa por el repositorio.

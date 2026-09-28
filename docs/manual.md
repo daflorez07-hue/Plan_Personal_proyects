@@ -10,7 +10,7 @@
 ## Agenda por voz
 1. Toca el **micrófono naranja** (botón flotante en el celular o barra superior en el computador).
 2. Di la actividad con fecha, hora y aviso. Ejemplos:
-   - "Mañana a las 3 de la tarde reunión con Cristian, recuérdame 30 minutos antes"
+   - "El jueves a las 10 primera sesión de entendimiento con cliente, recuérdame 30 minutos antes"
    - "El lunes a las 5 llamar a dos headhunters"
    - "En 20 minutos publicar el post de LinkedIn"
    - "Pagar la administración el viernes" (sin hora: queda de todo el día, aviso a las 8:00 a. m.)
@@ -26,7 +26,7 @@
 3. **Resumen semanal**: copia, descarga `.md` o PDF.
 
 ## Enero y marzo de 2027
-En **Puntos de control**: escribe el criterio medible de cada condición antes de la ventana, marca sí / parcial / no con evidencia y enlace, lee el veredicto y **registra la decisión** con su justificación. La decisión es tuya; la app solo calcula.
+La **Revisión 1 con IKM** (15 ene) y la **Decisión final sobre IKM** (31 mar) son actividades del plan: aparecen como hitos en el camino de Hoy. Escribe la evidencia en sus notas y regístralas como hechas.
 
 ## Cierre de trimestre
 **Frentes por modo**: ajusta los modos (máximo dos en Construir) y registra la revisión. **Laboratorio**: registra si el proyecto sigue, se pausa o se vuelve negocio.

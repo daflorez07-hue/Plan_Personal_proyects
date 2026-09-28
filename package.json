@@ -2,12 +2,19 @@
   "name": "derrotero",
   "version": "1.0.0",
   "private": true,
-  "description": "Plan personal de David Flórez Sierra (sep 2026 – jun 2027): actividades, puntos de control, indicadores, hábitos y agenda por voz.",
+  "description": "Plan personal de David Flórez Sierra (sep 2026 – jun 2027): actividades, camino del plan, indicadores, hábitos, agenda por voz y calendario.",
   "scripts": {
     "seed": "node data/build-seed.js",
     "build": "node build.js",
-    "test": "node --test test/logic.test.js",
+    "test": "node --test test/logic.test.js test/api.test.js test/db.pg.test.js",
     "test:e2e": "node build.js && node test/e2e.js"
   },
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "node-ical": "^0.27.2"
+  },
+  "devDependencies": {
+    "pg": "^8.23.0"
+  }
 }
