@@ -577,6 +577,8 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
   .ring-row { grid-template-columns: 116px minmax(0, 1fr); }
 }
 
+.toast > span { white-space: pre-line; }
+
 </style>
 <div class="app">
   <aside class="side" aria-label="Navegación principal">
@@ -1658,12 +1660,12 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
 
   // ───── bitácora (H-02, RF-06): un documento por día ─────
   var auditBuf = []; var auditTimer = null;
-  function audit(entity, entityId, label, field, before, after) {
+  function audit(entity, entityId, label, field, before, after, actor) {
     auditBuf.push({
       at: now(), entity: entity, entityId: entityId, label: String(label || '').slice(0, 160), field: field,
       before: typeof before === 'object' ? JSON.stringify(before) : String(before == null ? '' : before).slice(0, 400),
       after: typeof after === 'object' ? JSON.stringify(after) : String(after == null ? '' : after).slice(0, 400),
-      actor: S.meId || 'app'
+      actor: actor || S.meId || 'app'
     });
     clearTimeout(auditTimer);
     auditTimer = setTimeout(flushAudit, 700);
@@ -1769,9 +1771,12 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
       Object.keys(docs[c]).forEach(function (id) { S.d[c][id] = docs[c][id]; ops.push({ op: 'set', coll: c, id: id, data: clone(docs[c][id]) }); });
     });
     S.empty = false;
+    S.seeding = true;
     emit('all');
-    if (db && db.batch) { try { await db.batch(ops); } catch (e) { handleWriteError(e); } return; }
-    for (var i = 0; i < ops.length; i++) await put(ops[i].coll, ops[i].id, ops[i].data);
+    try {
+      if (db && db.batch) { try { await db.batch(ops); } catch (e) { handleWriteError(e); } }
+      else for (var i = 0; i < ops.length; i++) await put(ops[i].coll, ops[i].id, ops[i].data);
+    } finally { S.seeding = false; }
   }
 
   // respaldo diario (RNF): un documento por día, se conservan 14
@@ -1811,6 +1816,35 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
     startLocal(S.localReason);
   }
 
+  // ───── pendientes registrados por Claude (una sola vez por pendiente) ─────
+  function phaseFor(date) {
+    var ph = phases(); var d = date || today();
+    for (var i = 0; i < ph.length; i++) if (d >= ph[i].start && d <= ph[i].end) return ph[i].id;
+    return ph.length ? (d < ph[0].start ? ph[0].id : ph[ph.length - 1].id) : '';
+  }
+  function applyInbox() {
+    var inbox = root.DERROTERO_INBOX || []; var cfg = config();
+    if (!cfg || !S.canWrite || S.empty || S.seeding || !inbox.length) return [];
+    var done = (cfg.inboxApplied || []).slice(); var added = [];
+    var names = fronts().map(function (f) { return f.name; });
+    inbox.forEach(function (it) {
+      if (done.indexOf(it.id) >= 0) return;
+      done.push(it.id);
+      if (S.d.tasks[it.id]) return;
+      var phase = phaseFor(it.due);
+      var t = {
+        id: it.id, title: it.title, phase: phase, order: DL.nextOrder(tasks(), phase),
+        front: names.indexOf(it.front) >= 0 ? it.front : (names[0] || ''), owner: it.owner || 'Tú', due: it.due || '',
+        status: 'pendiente', note: it.note || '', blockCause: '', doneAt: '', version: 1, updatedAt: now()
+      };
+      put('tasks', it.id, t);
+      audit('actividad', it.id, t.title, 'creada', '', t.title, 'claude');
+      added.push(t);
+    });
+    if (done.length !== (cfg.inboxApplied || []).length) put('config', 'main', Object.assign({}, config(), { inboxApplied: done }));
+    return added;
+  }
+
   // ───── calendario personal (solo lectura) ─────
   S.cal = { status: 'off', events: [], fetchedAt: 0, calendars: 0, errors: [] };
   function calendarEvents() { return S.cal.events || []; }
@@ -1835,7 +1869,7 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
     updateTask: updateTask, addTask: addTask, deleteTask: deleteTask, bumpKpi: bumpKpi, saveConfig: saveConfig,
     snapshotAll: snapshotAll, loadSeedIntoDb: loadSeedIntoDb, dailyBackup: dailyBackup, listBackups: listBackups,
     names: names, resetLocal: resetLocal, clone: clone, today: today, localSaved: localSaved,
-    loadCalendar: loadCalendar, calendar: calendarEvents
+    loadCalendar: loadCalendar, calendar: calendarEvents, applyInbox: applyInbox
   };
 })(window);
 
@@ -2958,6 +2992,28 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
 })(window);
 
 ;
+/* Derrotero · pendientes registrados por Claude a partir de las conversaciones con David.
+ * Se agregan una sola vez al plan (config.main.inboxApplied guarda cuáles ya entraron),
+ * así que si David borra uno, no vuelve a aparecer. Sin datos inventados: lo que falta
+ * se marca como [DATO REQUERIDO] o [POR CONFIRMAR]. */
+(function (root) {
+  'use strict';
+  var FUENTE = 'Registrado por Claude a partir de la conversación del 28 sep 2026.';
+  root.DERROTERO_INBOX = [
+    { id: 'cv01', title: 'Definir la cifra de "más ventas" y el esquema de la deuda (criterios medibles de la revisión con IKM)', front: 'IKM', owner: 'Tú', due: '2027-01-11',
+      note: '[DATO REQUERIDO] Sin estos números la Revisión 1 con IKM (15 ene) no se puede evaluar. ' + FUENTE },
+    { id: 'cv02', title: 'Confirmar el día del comité financiero mensual (4 horas) y bloquearlo en la semana tipo', front: 'IKM', owner: 'Tú', due: '',
+      note: '[POR CONFIRMAR] Día y hora del comité. ' + FUENTE },
+    { id: 'cv03', title: 'Escribir el criterio de salida de ZONAL', front: 'Laboratorio', owner: 'Tú', due: '',
+      note: '[DATO REQUERIDO] Qué tiene que pasar para decidir si sigue, se pausa o se vuelve negocio. Se escribe también en Laboratorio. ' + FUENTE },
+    { id: 'cv04', title: 'Escribir el criterio de salida de Berry Lab', front: 'Laboratorio', owner: 'Tú', due: '',
+      note: '[DATO REQUERIDO] Qué tiene que pasar para decidir si sigue, se pausa o se vuelve negocio. Se escribe también en Laboratorio. ' + FUENTE },
+    { id: 'cv05', title: 'Revisar si publicar el calendario de Outlook de IKM encaja con la política de seguridad; si no, dejar de publicarlo y generar un enlace nuevo', front: 'IKM', owner: 'Tú', due: '',
+      note: 'El enlace secreto del calendario quedó en la conversación con Claude. Si se vuelve a publicar, pásale el enlace nuevo a Claude para actualizar Vercel. ' + FUENTE }
+  ];
+})(window);
+
+;
 /* Derrotero · controlador: eventos, render, agenda por voz, recordatorios y exportaciones. */
 (function (root) {
   'use strict';
@@ -3304,6 +3360,11 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
     return doc.output('arraybuffer');
   }
 
+  function announceInbox(added) {
+    if (!added || !added.length) return;
+    toast({ kicker: 'Registrado por Claude', title: added.length === 1 ? 'Un pendiente nuevo de la conversación' : added.length + ' pendientes nuevos de la conversación', text: added.map(function (t) { return '· ' + t.title; }).join('\n') });
+  }
+
   // ───────────── clics ─────────────
   var ACT = {
     'more': function () { U.more = !U.more; renderChrome(); },
@@ -3430,7 +3491,11 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
       if (bk) { U.exportMsg = await saveFile('derrotero-respaldo-' + bk.day + '.json', JSON.stringify(bk.data, null, 2)); render(true); }
     },
     'reset-local': function () { DS.resetLocal(); U.exportMsg = 'Plan base restaurado en este navegador.'; render(true); },
-    'load-seed': async function (b) { U.seedMsg = 'Cargando…'; render(true); await DS.loadSeedIntoDb(b.dataset.src === 'local'); U.seedMsg = ''; render(true); },
+    'load-seed': async function (b) {
+      U.seedMsg = 'Cargando…'; render(true);
+      await DS.loadSeedIntoDb(b.dataset.src === 'local');
+      U.seedMsg = ''; announceInbox(DS.applyInbox()); render(true);
+    },
     'goto-day': function (b) { var d = b.dataset.d; U.agView = 'mes'; U.agMonth = d.slice(0, 7); U.agDay = d; navigate('agenda'); },
     'cal-refresh': async function () { toast({ title: 'Leyendo el calendario…' }); await DS.loadCalendar(true); render(true); toast({ title: S.cal.status === 'ok' ? 'Calendario al día: ' + S.cal.events.length + ' eventos.' : 'El calendario no está conectado o no respondió.' }); },
     'toast-close': function (b) { closeToast(b.dataset.t); },
@@ -3670,7 +3735,13 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
     DS.onChange(function (kind) {
       if (kind && kind.toast) { toast({ kind: 'bad', title: kind.toast }); return; }
       if (kind === 'readonly') toast({ title: 'Esta cuenta no puede editar el plan', text: 'La vista quedó en solo lectura.' });
-      if (!bootedOnce && DS.ready() && !S.empty) { bootedOnce = true; setTimeout(function () { tick(); DS.dailyBackup(); }, 1500); }
+      if (!bootedOnce && DS.ready() && !S.empty) {
+        bootedOnce = true;
+        setTimeout(function () {
+          announceInbox(DS.applyInbox());
+          tick(); DS.dailyBackup();
+        }, 1500);
+      }
       scheduleRender();
     });
     render(true);

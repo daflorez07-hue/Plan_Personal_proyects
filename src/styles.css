@@ -570,3 +570,5 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
   .fbar { grid-template-columns: 96px minmax(0, 1fr) 40px; gap: 8px; font-size: 13px; }
   .ring-row { grid-template-columns: 116px minmax(0, 1fr); }
 }
+
+.toast > span { white-space: pre-line; }

@@ -33,10 +33,15 @@ const URL_ = 'http://localhost:' + PORT + '/';
     await a.waitForSelector('text=La base de datos está vacía');
     await a.click('[data-act="load-seed"]');
     await a.waitForSelector('.dash');
+    await a.waitForSelector('.toast >> text=Registrado por Claude', { timeout: 8000 });
+    await a.waitForTimeout(1500);
     const n = await pool.query("select count(*)::int as n from derrotero_docs where coll = 'tasks' and not deleted");
-    assert.equal(n.rows[0].n, 29);
+    assert.equal(n.rows[0].n, 34);
+    const cfg = await pool.query("select data->'inboxApplied' as ia from derrotero_docs where coll = 'config' and id = 'main'");
+    assert.equal(cfg.rows[0].ia.length, 5);
+    await a.evaluate(() => document.querySelectorAll('[data-act="toast-close"]').forEach((b) => b.click()));
     assert.match(await a.textContent('#conn'), /Postgres · en línea/);
-    ok('base vacía → plan base cargado en Postgres (29 actividades)');
+    ok('base vacía → plan base + 5 pendientes de la conversación en Postgres (34), una sola vez');
 
     await a.waitForFunction(() => /Conectado/.test(document.querySelector('#conn').textContent), null, { timeout: 10000 });
     await a.waitForFunction(() => document.querySelectorAll('svg.road-svg line[stroke="#4B5FB0"]').length > 20, null, { timeout: 10000 });
