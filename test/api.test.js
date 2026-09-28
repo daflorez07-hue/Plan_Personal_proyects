@@ -70,3 +70,19 @@ test('calendario: lee la dirección del servidor y no la expone', async () => {
   assert.ok(!JSON.stringify(res.body).includes('secreto'));
   delete process.env.CALENDAR_ICS_URL;
 });
+
+test('calendario: formato de Outlook (zona horaria de Windows) y salud sin datos', async () => {
+  const ical = require('node-ical');
+  const { expand } = require('../api/calendar.js');
+  const text = fs.readFileSync(path.join(__dirname, 'fixtures', 'outlook.ics'), 'utf8');
+  const ev = expand(ical, text, 0, new Date('2026-09-01'), new Date('2026-12-31'));
+  const weekly = ev.filter((e) => e.title === 'Comité operativo');
+  assert.equal(weekly[0].date, '2026-09-28'); assert.equal(weekly[0].time, '09:00');
+  assert.equal(weekly.length, 14);
+  delete process.env.CALENDAR_ICS_URL; delete process.env.DATABASE_URL;
+  delete require.cache[require.resolve('../api/calendar.js')]; delete require.cache[require.resolve('../api/health.js')];
+  const health = require('../api/health.js');
+  const res = fakeRes();
+  await health({ method: 'GET', headers: {}, query: {} }, res);
+  assert.deepEqual(res.body, { app: 'derrotero', db: { configured: false }, calendar: { configured: false } });
+});
