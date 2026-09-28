@@ -4,11 +4,14 @@
 (function (root) {
   'use strict';
   var DL = root.DL;
-  var COLLS = ['config', 'tasks', 'kpis', 'kpi_events', 'checkpoints', 'decisions', 'habits', 'habit_logs', 'blocks', 'lab', 'agenda', 'audit'];
+  var COLLS = ['config', 'tasks', 'kpis', 'kpi_events', 'decisions', 'habits', 'habit_logs', 'blocks', 'lab', 'agenda', 'audit'];
   var LOCAL_KEY = 'derrotero-local-v1';
 
   var S = {
     mode: 'loading',        // loading · db · local
+    backend: '',            // artefacto · vercel
+    offline: false,
+    localReason: '',
     canWrite: true,
     meId: null,
     user: null,
@@ -38,13 +41,12 @@
   function fronts() { var c = config(); return c ? Object.values(c.fronts).sort(function (a, b) { return a.order - b.order; }) : []; }
   function kpiDefs() { var c = config(); return c ? c.kpis.slice().sort(function (a, b) { return a.order - b.order; }) : []; }
   function kpiValues() { return (S.d.kpis.main && S.d.kpis.main.values) || {}; }
-  function checkpoints() { return list('checkpoints').sort(function (a, b) { return (a.order || 0) - (b.order || 0); }); }
   function agenda() { return list('agenda'); }
 
   // ───── arranque ─────
   function seedDocs(seed) {
     var out = { config: { main: seed.config }, kpis: { main: seed.kpis } };
-    ['tasks', 'checkpoints', 'habits', 'blocks', 'lab'].forEach(function (c) { out[c] = clone(seed[c]); });
+    ['tasks', 'habits', 'blocks', 'lab'].forEach(function (c) { out[c] = clone(seed[c]); });
     return out;
   }
 
@@ -64,9 +66,25 @@
 
   async function init() {
     var use = root.claude && typeof root.claude.use === 'function';
-    if (!use) { startLocal('file'); return; }
-    try { db = await root.claude.use('db'); } catch (e) { db = null; }
-    if (!db) { startLocal('nodb'); return; }
+    if (use) {
+      try { db = await root.claude.use('db'); } catch (e) { db = null; }
+      if (!db) { startLocal('nodb'); return; }
+      S.backend = 'artefacto';
+      subscribe();
+      initUser();
+      return;
+    }
+    // Fuera del artefacto: base de datos propia en Vercel (Postgres) si está conectada.
+    var r = root.DR ? await root.DR.connect() : { reason: 'file' };
+    if (!r.db) { startLocal(r.reason); return; }
+    db = r.db;
+    S.backend = 'vercel';
+    S.meId = 'owner';
+    subscribe();
+  }
+
+  var lastNetToast = 0;
+  function subscribe() {
     S.mode = 'db';
     COLLS.forEach(function (c) {
       var q = c === 'audit' ? db.collection('audit').orderBy('day', 'desc').limit(62) : db.collection(c);
@@ -75,14 +93,18 @@
         snap.docs.forEach(function (d) { m[d.id] = d.data(); });
         S.d[c] = m;
         S.loaded[c] = true;
+        S.offline = false;
         if (c === 'config') S.empty = !m.main;
         emit(c);
       }, function (err) {
         console.warn('db', c, err);
         if (err && err.code === 'revoked') { S.canWrite = false; emit('all'); }
+        if (err && (err.code === 'network' || err.code === 'auth') && Date.now() - lastNetToast > 60000) {
+          lastNetToast = Date.now(); S.offline = true;
+          emit({ toast: err.code === 'auth' ? 'La sesión de Vercel venció. Recarga la página para volver a entrar.' : 'Sin conexión con la base de datos. Los cambios se reintentan al volver la conexión.' });
+        }
       });
     });
-    initUser();
   }
 
   async function initUser() {
@@ -98,7 +120,7 @@
 
   function ready() {
     if (S.mode === 'local') return true;
-    return S.mode === 'db' && ['config', 'tasks', 'kpis', 'checkpoints'].every(function (c) { return S.loaded[c]; });
+    return S.mode === 'db' && ['config', 'tasks', 'kpis'].every(function (c) { return S.loaded[c]; });
   }
 
   // ───── escritura ─────
@@ -240,9 +262,24 @@
     return out;
   }
 
-  async function loadSeedIntoDb() {
-    var docs = seedDocs(root.DERROTERO_SEED);
-    for (var c in docs) for (var id in docs[c]) await put(c, id, docs[c][id]);
+  function localSaved() {
+    try { var v = JSON.parse(localStorage.getItem(LOCAL_KEY) || 'null'); return v && v.tasks && Object.keys(v.tasks).length ? v : null; } catch (e) { return null; }
+  }
+
+  /** Carga el plan base, o lo que había en este navegador (fromLocal), en la base vacía. */
+  async function loadSeedIntoDb(fromLocal) {
+    var src = fromLocal ? localSaved() : null;
+    var docs = src || seedDocs(root.DERROTERO_SEED);
+    var ops = [];
+    COLLS.forEach(function (c) {
+      if (!docs[c]) return;
+      S.d[c] = Object.assign({}, S.d[c]);
+      Object.keys(docs[c]).forEach(function (id) { S.d[c][id] = docs[c][id]; ops.push({ op: 'set', coll: c, id: id, data: clone(docs[c][id]) }); });
+    });
+    S.empty = false;
+    emit('all');
+    if (db && db.batch) { try { await db.batch(ops); } catch (e) { handleWriteError(e); } return; }
+    for (var i = 0; i < ops.length; i++) await put(ops[i].coll, ops[i].id, ops[i].data);
   }
 
   // respaldo diario (RNF): un documento por día, se conservan 14
@@ -282,13 +319,30 @@
     startLocal(S.localReason);
   }
 
+  // ───── calendario personal (solo lectura) ─────
+  S.cal = { status: 'off', events: [], fetchedAt: 0, calendars: 0, errors: [] };
+  function calendarEvents() { return S.cal.events || []; }
+  async function loadCalendar(fresh) {
+    if (!root.DR || (root.claude && typeof root.claude.use === 'function')) return;
+    if (S.cal.status === 'off') S.cal.status = 'loading';
+    try {
+      var r = await root.DR.calendar(fresh);
+      if (!r.configured) S.cal = { status: 'off', events: [], fetchedAt: 0, calendars: 0, errors: [] };
+      else S.cal = { status: r.errors && r.errors.length && !r.events.length ? 'error' : 'ok', events: r.events || [], fetchedAt: r.fetchedAt, calendars: r.calendars, errors: r.errors || [] };
+    } catch (e) {
+      S.cal = Object.assign({}, S.cal, { status: S.cal.events.length ? 'ok' : 'unreachable' });
+    }
+    emit('cal');
+  }
+
   root.DS = {
     S: S, init: init, ready: ready, onChange: onChange, emit: emit,
     config: config, list: list, tasks: tasks, phases: phases, fronts: fronts, kpiDefs: kpiDefs, kpiValues: kpiValues,
-    checkpoints: checkpoints, agenda: agenda,
+    agenda: agenda,
     put: put, remove: remove, newId: newId, audit: audit, flushAudit: flushAudit,
     updateTask: updateTask, addTask: addTask, deleteTask: deleteTask, bumpKpi: bumpKpi, saveConfig: saveConfig,
     snapshotAll: snapshotAll, loadSeedIntoDb: loadSeedIntoDb, dailyBackup: dailyBackup, listBackups: listBackups,
-    names: names, resetLocal: resetLocal, clone: clone, today: today
+    names: names, resetLocal: resetLocal, clone: clone, today: today, localSaved: localSaved,
+    loadCalendar: loadCalendar, calendar: calendarEvents
   };
 })(window);

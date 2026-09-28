@@ -45,23 +45,13 @@ test('criterios 2 y 3: ciclo rápido y bloqueada protegida (H-04)', () => {
   assert.equal(DL.validateStatusChange({}, 'bloqueada', 'Espera firma del contador').ok, true);
 });
 
-test('criterio 4: veredictos RN-02', () => {
-  const si = { value: 'si' };
-  assert.equal(DL.verdict({ comisiones: si, ventas: si, deuda: si }).tone, 'ok');
-  const v2 = DL.verdict({ comisiones: si, ventas: si, deuda: { value: 'no' } }, 'ene-2027');
-  assert.equal(v2.label, 'Cumplimiento parcial (2 de 3)');
-  assert.match(v2.detail, /búsqueda de empleo/);
-  assert.equal(DL.verdict({ comisiones: { value: 'no' } }, 'mar-2027').label, 'No se cumple');
-  assert.match(DL.verdict({ comisiones: { value: 'parcial' } }, 'mar-2027').detail, /plan de salida/);
-  assert.equal(DL.verdict({}).label, 'Sin evaluar');
-});
-
-test('RN-06: alerta si falta el criterio medible', () => {
-  const cp = seed.checkpoints['ene-2027'];
-  const alerts = DL.checkpointAlerts(cp, TODAY);
-  assert.ok(alerts.some(a => /criterio medible/.test(a.text)));
-  const late = DL.checkpointAlerts(cp, '2027-01-20');
-  assert.ok(late.some(a => a.tone === 'bad'));
+test('agenda: ejemplo de sesión con cliente', () => {
+  const now = Date.parse('2026-09-28T20:13:00Z');
+  const r = DL.parseAgenda('El jueves a las 10 primera sesión de entendimiento con cliente, recuérdame 30 minutos antes', now);
+  assert.equal(r.title, 'Primera sesión de entendimiento con cliente');
+  assert.equal(r.date, '2026-10-01');
+  assert.equal(r.time, '10:00');
+  assert.equal(r.remindMin, 30);
 });
 
 test('criterio 5 y RN-05: indicadores nunca bajan de cero', () => {
@@ -201,7 +191,6 @@ test('resumen semanal', () => {
     tasks,
     kpiDefs: seed.config.kpis,
     kpiValues: seed.kpis.values,
-    checkpoints: Object.values(seed.checkpoints),
     habits: Object.values(seed.habits),
     habitLogs: {},
     agenda: [{ id: 'a', title: 'Llamar a Cristian', date: '2026-09-26', time: '15:00' }]
@@ -210,5 +199,5 @@ test('resumen semanal', () => {
   assert.match(txt, /AVANCE: 10 %/);
   assert.match(txt, /COMPLETADAS ESTA SEMANA \(3\)/);
   assert.match(txt, /Llamar a Cristian \[agenda\]/);
-  assert.match(txt, /Sin evaluar/);
+  assert.doesNotMatch(txt, /PUNTOS DE CONTROL/);
 });

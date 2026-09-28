@@ -1,4 +1,4 @@
-// Pruebas de extremo a extremo (criterios de aceptación 1–6 y 8) sobre dist/derrotero.local.html en modo local.
+// Pruebas de extremo a extremo (criterios de aceptación 1–3, 5, 6 y 8) sobre dist/derrotero.local.html en modo local.
 // Uso: node build.js && NODE_PATH=$(npm root -g) node test/e2e.js
 const { chromium } = require('playwright');
 const path = require('path');
@@ -18,9 +18,11 @@ const SHOTS = process.env.SHOTS;
   const ok = (name) => console.log('ok -', name);
 
   // 1. semilla
-  await page.waitForSelector('.stats');
-  const stats = await page.textContent('.stats');
-  assert.match(stats, /10\s*%/); assert.match(stats, /3 de 29 actividades hechas/);
+  await page.waitForSelector('.dash');
+  const stats = await page.textContent('.dash');
+  assert.match(stats, /10\s*%/); assert.match(stats, /3\/29 hechas/);
+  assert.ok(await page.locator('svg.road-svg #walker').count() === 1, 'quien camina está en el camino');
+  assert.ok(await page.locator('svg.road-svg .rd-hit').count() >= 10, 'hitos del plan sobre el camino');
   if (SHOTS) await page.screenshot({ path: SHOTS + '/hoy-desktop.png', fullPage: true });
   await page.click('.side [data-route="actividades"]');
   assert.equal(await page.locator('.trow').count(), 29);
@@ -48,14 +50,6 @@ const SHOTS = process.env.SHOTS;
   assert.equal(await page.getAttribute('#task-t05 .st-btn', 'title'), 'bloqueada');
   await page.click('#task-t05 [data-act="confirm-cancel"]');
   ok('criterio 3: bloqueada exige causa y confirmación');
-
-  // 4. veredictos
-  await page.click('.side [data-route="control"]');
-  for (const k of ['comisiones', 'ventas', 'deuda']) await page.click(`[data-act="crit"][data-cp="ene-2027"][data-k="${k}"][data-v="si"]`);
-  assert.match(await page.textContent('#cp-ene-2027 .verdict'), /Quedarse tiene sentido/);
-  await page.click('[data-act="crit"][data-cp="ene-2027"][data-k="deuda"][data-v="si"]');
-  assert.match(await page.textContent('#cp-ene-2027 .verdict'), /Cumplimiento parcial \(2 de 3\)/);
-  ok('criterio 4: veredicto verde y parcial 2 de 3');
 
   // 5. indicador con movimiento fechado
   await page.click('.side [data-route="indicadores"]');
@@ -99,7 +93,7 @@ const SHOTS = process.env.SHOTS;
 
   // 8. 360 px sin desplazamiento horizontal
   await page.setViewportSize({ width: 360, height: 780 });
-  for (const r of ['hoy', 'agenda', 'actividades', 'control', 'indicadores', 'habitos', 'semana', 'frentes', 'laboratorio', 'resumen', 'bitacora', 'ajustes']) {
+  for (const r of ['hoy', 'agenda', 'actividades', 'indicadores', 'habitos', 'semana', 'frentes', 'laboratorio', 'resumen', 'bitacora', 'ajustes']) {
     await page.evaluate((r) => { location.hash = r; }, r);
     await page.waitForTimeout(120);
     const over = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

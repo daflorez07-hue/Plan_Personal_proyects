@@ -32,6 +32,8 @@
     try { if (focusId) { selS = a.selectionStart; selE = a.selectionEnd; } } catch (e) { }
     el.main.innerHTML = mainHtml();
     renderChrome();
+    hideTip();
+    if (U.route === 'hoy' && root.DDash) { lastVertical = root.DDash.isVertical(); root.DDash.mount(); }
     if (focusId) {
       var n = document.getElementById(focusId);
       if (n) { n.focus({ preventScroll: true }); try { if (selS != null) n.setSelectionRange(selS, selE); } catch (e) { } }
@@ -41,12 +43,18 @@
   function mainHtml() {
     if (S.mode === 'loading' || (S.mode === 'db' && !S.loaded.config)) return '<p class="empty">Cargando el plan…</p>';
     if (S.mode === 'db' && S.empty) {
-      return '<header class="page-head"><p class="kicker">Primera vez</p><h1>La base de datos está <span class="senal">vacía</span></h1><p class="bajada">Carga el plan base: 29 actividades, 2 puntos de control, 6 indicadores, 7 hábitos, la semana tipo y el laboratorio.</p></header>' +
-        (S.canWrite ? '<div><button class="btn llama" data-act="load-seed">Cargar el plan base</button></div>' : '<p class="empty">Solo el dueño del plan puede cargarlo.</p>') + (U.seedMsg ? '<p class="hint">' + esc(U.seedMsg) + '</p>' : '');
+      var saved = DS.localSaved();
+      return '<header class="page-head"><p class="kicker">Primera vez</p><h1>La base de datos está <span class="senal">vacía</span></h1><p class="bajada">' +
+        (saved ? 'Este navegador tiene el plan con tus cambios (' + Object.keys(saved.tasks).length + ' actividades). Súbelo para verlo en todos tus dispositivos, o empieza desde el plan base.' : 'Carga el plan base: 29 actividades, 6 indicadores, 7 hábitos, la semana tipo y el laboratorio.') + '</p></header>' +
+        (S.canWrite ? '<div class="row">' + (saved ? '<button class="btn llama" data-act="load-seed" data-src="local">Subir lo de este navegador</button><button class="btn alt" data-act="load-seed">Empezar desde el plan base</button>' : '<button class="btn llama" data-act="load-seed">Cargar el plan base</button>') + '</div>' : '<p class="empty">Solo el dueño del plan puede cargarlo.</p>') + (U.seedMsg ? '<p class="hint">' + esc(U.seedMsg) + '</p>' : '');
     }
     if (!DS.ready()) return '<p class="empty">Cargando el plan…</p>';
     var banners = '';
-    if (S.mode === 'local') banners += '<div class="banner warn"><span><b>Modo local.</b> Esta vista no tiene conexión con la base de datos del plan: los cambios quedan solo en este navegador.</span></div>';
+    if (S.mode === 'local') {
+      if (S.localReason === 'nodb' && !root.claude) banners += '<div class="banner warn"><span><b>Base de datos sin conectar.</b> Lo que registres queda solo en este navegador. <a href="#ajustes" data-route="ajustes">Cómo conectarla</a></span></div>';
+      else if (S.localReason === 'offline' || S.localReason === 'auth') banners += '<div class="banner warn"><span><b>Sin conexión con el servidor.</b> Trabajas en modo local; recarga la página cuando vuelva la conexión.</span></div>';
+      else banners += '<div class="banner warn"><span><b>Modo local.</b> Esta vista no tiene conexión con la base de datos del plan: los cambios quedan solo en este navegador.</span></div>';
+    }
     if (!S.canWrite) banners += '<div class="banner info"><span><b>Solo lectura.</b> Puedes ver el plan; los cambios los hace el dueño.</span></div>';
     return banners + DU.views[U.route]();
   }
@@ -85,6 +93,7 @@
 
   function navigate(route, opts) {
     if (ROUTES.indexOf(route) < 0) route = 'hoy';
+    if (route === 'hoy' && U.route !== 'hoy') U.roadPlayed = false;
     U.route = route; U.more = false; U.exportMsg = '';
     if (opts && opts.tview) U.tview = opts.tview;
     try { if (location.hash !== '#' + route) history.replaceState(null, '', '#' + route); } catch (e) { }
@@ -95,13 +104,6 @@
   // ───────────── dominio: pequeñas operaciones ─────────────
   function task(id) { return S.d.tasks[id]; }
   function today() { return DS.today(); }
-
-  function setCheckpoint(id, mutate, auditField, before, after) {
-    var cp = DS.clone(S.d.checkpoints[id]); if (!cp) return;
-    mutate(cp); cp.version = (cp.version || 0) + 1; cp.updatedAt = Date.now();
-    if (auditField) DS.audit('punto de control', id, cp.title, auditField, before, after);
-    DS.put('checkpoints', id, cp);
-  }
 
   function setAgenda(id, patch, field) {
     var a = S.d.agenda[id]; if (!a) return;
@@ -376,12 +378,6 @@
     },
     'tf-front': function (b) { U.tf.front = b.dataset.v; render(true); },
     'tview': function (b) { U.tview = b.dataset.v; render(true); },
-    'crit': function (b) {
-      var cp = S.d.checkpoints[b.dataset.cp]; var k = b.dataset.k; var cur = (cp.criteria[k] || {}).value || 'pendiente';
-      var next = cur === b.dataset.v ? 'pendiente' : b.dataset.v;
-      setCheckpoint(cp.id, function (c) { c.criteria[k] = Object.assign({}, c.criteria[k], { value: next }); }, (cp.criteria[k] || {}).label || k, cur, next);
-      render(true);
-    },
     'kpi': function (b) { DS.bumpKpi(b.dataset.k, +b.dataset.d); render(true); },
     'kpi-open': function (b) { U.kpiOpen[b.dataset.k] = !U.kpiOpen[b.dataset.k]; render(true); },
     'habit-toggle': function (b) { toggleHabit(b.dataset.id); render(true); },
@@ -474,7 +470,9 @@
       if (bk) { U.exportMsg = await saveFile('derrotero-respaldo-' + bk.day + '.json', JSON.stringify(bk.data, null, 2)); render(true); }
     },
     'reset-local': function () { DS.resetLocal(); U.exportMsg = 'Plan base restaurado en este navegador.'; render(true); },
-    'load-seed': async function () { U.seedMsg = 'Cargando…'; render(true); await DS.loadSeedIntoDb(); U.seedMsg = ''; render(true); },
+    'load-seed': async function (b) { U.seedMsg = 'Cargando…'; render(true); await DS.loadSeedIntoDb(b.dataset.src === 'local'); U.seedMsg = ''; render(true); },
+    'goto-day': function (b) { var d = b.dataset.d; U.agView = 'mes'; U.agMonth = d.slice(0, 7); U.agDay = d; navigate('agenda'); },
+    'cal-refresh': async function () { toast({ title: 'Leyendo el calendario…' }); await DS.loadCalendar(true); render(true); toast({ title: S.cal.status === 'ok' ? 'Calendario al día: ' + S.cal.events.length + ' eventos.' : 'El calendario no está conectado o no respondió.' }); },
     'toast-close': function (b) { closeToast(b.dataset.t); },
     'conflict': function (b) {
       var key = b.dataset.k; var c = U.conflict[key]; if (!c) return;
@@ -482,13 +480,44 @@
       delete U.conflict[key]; delete bases[key];
       var parts = key.split(':');
       if (parts[0] === 'task') DS.updateTask(parts[1], { note: text });
-      else setCheckpoint(parts[1], function (cp) { cp.note = text; }, 'notas', S.d.checkpoints[parts[1]].note, text);
       render(true);
     }
   };
 
+  // ───────────── ayudas emergentes de los gráficos ─────────────
+  var tipFor = null, lastPointer = 'mouse', lastVertical = null;
+  function showTip(t, x, y) {
+    if (!el.tip) return;
+    tipFor = t;
+    el.tip.textContent = t.getAttribute('data-tip');
+    el.tip.hidden = false;
+    if (x == null) { var r = t.getBoundingClientRect(); x = r.left + r.width / 2; y = r.top; }
+    var w = el.tip.offsetWidth, h = el.tip.offsetHeight;
+    var left = Math.max(8, Math.min(root.innerWidth - w - 8, x - w / 2));
+    var top = y - h - 14; if (top < 8) top = y + 18;
+    el.tip.style.left = left + 'px'; el.tip.style.top = top + 'px';
+  }
+  function hideTip() { tipFor = null; if (el.tip) el.tip.hidden = true; }
+  document.addEventListener('pointerdown', function (e) { lastPointer = e.pointerType || 'mouse'; });
+  document.addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'touch') return;
+    var t = e.target.closest && e.target.closest('[data-tip]');
+    if (t) showTip(t, e.clientX, e.clientY); else if (tipFor) hideTip();
+  });
+  document.addEventListener('focusin', function (e) { var t = e.target.closest && e.target.closest('[data-tip]'); if (t) showTip(t); });
+  document.addEventListener('focusout', function () { hideTip(); });
+  root.addEventListener('scroll', function () { if (tipFor) hideTip(); }, true);
+  root.addEventListener('resize', function () {
+    hideTip();
+    if (U.route === 'hoy' && root.DDash && lastVertical !== null && root.DDash.isVertical() !== lastVertical) render(false);
+  });
+
   document.addEventListener('click', function (e) {
     if (!audioCtx && (root.AudioContext || root.webkitAudioContext)) { try { audioCtx = new (root.AudioContext || root.webkitAudioContext)(); } catch (x) { } }
+    // En pantallas táctiles el primer toque sobre un gráfico muestra el detalle; el segundo abre.
+    var tp = e.target.closest && e.target.closest('[data-tip]');
+    if (tp && lastPointer === 'touch' && tipFor !== tp && tp.tagName !== 'BUTTON' && tp.tagName !== 'A') { e.preventDefault(); showTip(tp); return; }
+    if (!tp && tipFor) hideTip();
     var r = e.target.closest('[data-route]');
     if (r) { e.preventDefault(); navigate(r.dataset.route, { tview: r.dataset.tview }); return; }
     var b = e.target.closest('[data-act]');
@@ -505,7 +534,6 @@
   document.addEventListener('focusin', function (e) {
     var t = e.target;
     if (t.dataset.taskNote) { var tk = task(t.dataset.taskNote); if (tk) noteFocus('task:' + tk.id, tk.version, tk.note); }
-    if (t.dataset.cpNote) { var cp = S.d.checkpoints[t.dataset.cpNote]; if (cp) noteFocus('cp:' + cp.id, cp.version, cp.note); }
   });
   document.addEventListener('focusout', function () { setTimeout(function () { if (pendingRender && !typing()) render(false); }, 0); });
 
@@ -519,7 +547,6 @@
     var t = e.target; var ds = t.dataset;
     if (ds.tf) { U.tf[ds.tf] = t.type === 'checkbox' ? t.checked : t.value; render(true); return; }
     if (ds.taskNote) { var tk = task(ds.taskNote); if (tk) saveNote('task:' + tk.id, tk.note, t.value, function (v) { DS.updateTask(tk.id, { note: v }); }); return; }
-    if (ds.cpNote) { var cp = S.d.checkpoints[ds.cpNote]; if (cp) saveNote('cp:' + cp.id, cp.note, t.value, function (v) { setCheckpoint(cp.id, function (c) { c.note = v; }, 'notas', cp.note, v); }); return; }
     if (ds.tfield) {
       var id = ds.id; var f = ds.tfield; var v = t.value; var patch = {};
       if (f === 'title' && !v.trim()) { t.value = task(id).title; return; }
@@ -535,12 +562,6 @@
       delete U.confirm[tt.id]; DS.updateTask(tt.id, { status: ns }); render(true); return;
     }
     if (ds.tblock) { var tb = task(ds.tblock); if (tb && tb.status === 'bloqueada' && t.value.trim()) DS.updateTask(tb.id, { blockCause: t.value.trim() }); return; }
-    if (ds.crit) {
-      var p = ds.crit.split('|'); var c = S.d.checkpoints[p[0]]; var before = (c.criteria[p[1]] || {})[p[2]] || '';
-      if (before === t.value) return;
-      setCheckpoint(p[0], function (x) { x.criteria[p[1]] = Object.assign({}, x.criteria[p[1]]); x.criteria[p[1]][p[2]] = t.value.trim(); }, (c.criteria[p[1]] || {}).label + ' · ' + { measurable: 'criterio medible', evidence: 'evidencia', link: 'enlace' }[p[2]], before, t.value.trim());
-      render(true); return;
-    }
     if (ds.ag) {
       var a = S.d.agenda[ds.ag]; if (!a) return; var val = t.value; var pa = {};
       if (ds.f === 'title' && !val.trim()) { t.value = a.title; return; }
@@ -582,11 +603,6 @@
       if (f === 'due' && !DL.isDateStr(v)) { input.value = ob; return; }
       if (!v) { input.value = ob; return; }
       k[f] = v; DS.saveConfig({ kpis: cfg.kpis }, 'Indicador ' + k.label, f, ob, v);
-    } else if (kind === 'cp') {
-      var cp = S.d.checkpoints[id]; var cb = cp[f];
-      if (f !== 'title' && !DL.isDateStr(v)) { input.value = cb; return; }
-      if (!v) { input.value = cb; return; }
-      setCheckpoint(id, function (c) { c[f] = v; }, f === 'title' ? 'título' : f === 'windowStart' ? 'inicio de ventana' : 'fin de ventana', cb, v);
     }
     render(true);
   }
@@ -603,6 +619,10 @@
       e.preventDefault(); U.capText = e.target.value; doParse(e.target.value);
     }
     if (e.key === 'Escape' && U.more) { U.more = false; renderChrome(); }
+    if (e.key === 'Escape') hideTip();
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.getAttribute && e.target.getAttribute('role') === 'button' && e.target.dataset.act && e.target.tagName !== 'BUTTON') {
+      e.preventDefault(); var fn = ACT[e.target.dataset.act]; if (fn) fn(e.target, e);
+    }
   });
 
   // ───────────── formularios ─────────────
@@ -616,12 +636,6 @@
       var id = DS.addTask({ title: g('title'), phase: g('phase'), front: g('front'), owner: g('owner'), due: g('due') });
       f.reset(); U.open[id] = false; render(true);
       toast({ kicker: 'Actividad agregada', title: g('title') || 'Nueva actividad' });
-    } else if (kind === 'decision') {
-      var cp = S.d.checkpoints[f.dataset.cp]; if (!g('justification')) return;
-      var v = DL.verdict(cp.criteria, cp.id); var did = DS.newId('d');
-      DS.put('decisions', did, { id: did, kind: 'checkpoint', checkpointId: cp.id, checkpointTitle: cp.title, verdict: v.label, option: g('option'), justification: g('justification'), date: g('date') || today(), at: Date.now(), actor: S.meId || 'app' });
-      DS.audit('decisión', did, cp.title, 'decisión registrada', '', g('option'));
-      f.reset(); render(true); toast({ kicker: 'Decisión registrada', title: g('option') });
     } else if (kind === 'add-habit') {
       var hid = DS.newId('h'); var n = DS.list('habits').length + 1;
       DS.put('habits', hid, { id: hid, title: g('title'), freq: g('freq'), target: Math.max(1, +g('target') || 1), days: g('freq') === 'diario' ? [1, 2, 3, 4, 5] : [], when: g('when'), front: '', order: n });
@@ -690,6 +704,7 @@
   // ───────────── arranque ─────────────
   function boot() {
     el = { main: $('#main'), nav: $('#nav'), tabbar: $('#tabbar'), conn: $('#conn'), stamp: $('#stamp'), toasts: $('#toasts'), sheet: $('#sheet') };
+    el.tip = document.createElement('div'); el.tip.className = 'tip'; el.tip.setAttribute('role', 'tooltip'); el.tip.hidden = true; document.body.appendChild(el.tip);
     var h = (location.hash || '').slice(1); if (ROUTES.indexOf(h) >= 0) U.route = h;
     U.notif = root.Notification ? (Notification.permission === 'granted' ? 'granted' : Notification.permission === 'denied' ? 'denied' : 'default') : 'unsupported';
     DS.onChange(function (kind) {
@@ -704,6 +719,8 @@
       root.claude.use('sample').then(function (s) { sample = s; U.aiAvailable = !!s; scheduleRender(); }).catch(function () { });
       root.claude.use('downloads').then(function (d) { downloads = d; }).catch(function () { });
     }
+    DS.loadCalendar(false);
+    setInterval(function () { DS.loadCalendar(false); }, 10 * 60000);
     setInterval(tick, 15000);
     setInterval(function () { if (U.route === 'hoy' || U.route === 'agenda') render(false); else renderChrome(); }, 60000);
   }
