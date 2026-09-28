@@ -346,7 +346,7 @@
 
   function announceInbox(added) {
     if (!added || !added.length) return;
-    toast({ kicker: 'Registrado por Claude', title: added.length === 1 ? 'Un pendiente nuevo de la conversación' : added.length + ' pendientes nuevos de la conversación', text: added.map(function (t) { return '· ' + t.title; }).join('\n') });
+    toast({ kicker: 'Registrado por Claude', title: added.length === 1 ? 'Un cambio de la conversación' : added.length + ' cambios de la conversación', text: added.slice(0, 8).map(function (t) { return '· ' + t.title; }).join('\n') + (added.length > 8 ? '\n+' + (added.length - 8) + ' más' : '') });
   }
 
   // ───────────── clics ─────────────

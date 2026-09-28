@@ -335,17 +335,45 @@
     var names = fronts().map(function (f) { return f.name; });
     inbox.forEach(function (it) {
       if (done.indexOf(it.id) >= 0) return;
+      var kind = it.kind || 'task';
+      if (kind === 'patch' && !S.d.tasks[it.task]) return; // espera a que exista la actividad
       done.push(it.id);
-      if (S.d.tasks[it.id]) return;
-      var phase = phaseFor(it.due);
-      var t = {
-        id: it.id, title: it.title, phase: phase, order: DL.nextOrder(tasks(), phase),
-        front: names.indexOf(it.front) >= 0 ? it.front : (names[0] || ''), owner: it.owner || 'Tú', due: it.due || '',
-        status: 'pendiente', note: it.note || '', blockCause: '', doneAt: '', version: 1, updatedAt: now()
-      };
-      put('tasks', it.id, t);
-      audit('actividad', it.id, t.title, 'creada', '', t.title, 'claude');
-      added.push(t);
+      if (kind === 'task') {
+        if (S.d.tasks[it.id]) return;
+        var phase = phaseFor(it.due);
+        var t = {
+          id: it.id, title: it.title, phase: phase, order: DL.nextOrder(tasks(), phase),
+          front: names.indexOf(it.front) >= 0 ? it.front : (names[0] || ''), owner: it.owner || 'Tú', due: it.due || '',
+          status: 'pendiente', note: it.note || '', blockCause: '', doneAt: '', version: 1, updatedAt: now()
+        };
+        put('tasks', it.id, t);
+        audit('actividad', it.id, t.title, 'creada', '', t.title, 'claude');
+        added.push({ title: t.title });
+      } else if (kind === 'patch') {
+        var cur = S.d.tasks[it.task]; var patch = {};
+        if (it.status && cur.status !== 'hecha' && cur.status !== it.status) patch.status = it.status;
+        if (it.noteAppend && String(cur.note || '').indexOf(it.noteAppend) < 0) patch.note = (cur.note ? cur.note + '\n\n' : '') + it.noteAppend;
+        if (!Object.keys(patch).length) return;
+        updateTask(it.task, patch, { silent: true });
+        if (patch.status) audit('actividad', it.task, cur.title, 'estado', cur.status, patch.status, 'claude');
+        if (patch.note) audit('actividad', it.task, cur.title, 'nota', cur.note || '', patch.note, 'claude');
+        added.push({ title: 'Actualizada: ' + cur.title });
+      } else if (kind === 'agenda') {
+        var n = 0;
+        (it.items || []).forEach(function (a) {
+          if (S.d.agenda[a.id]) return;
+          var item = Object.assign({ done: false, doneAt: 0, createdAt: now(), updatedAt: now(), source: 'claude', taskId: '' }, a);
+          put('agenda', a.id, item); n++;
+          audit('agenda', a.id, item.title, 'creada', '', DL.fmtDate(item.date) + (item.time ? ' ' + DL.fmtTime(item.time) : ''), 'claude');
+        });
+        if (n) added.push({ title: it.summary || n + ' citas en la agenda' });
+      } else if (kind === 'lab') {
+        var p = S.d.lab[it.lab];
+        if (!p || String(p.exitCriterion || '').trim()) return;
+        put('lab', p.id, Object.assign({}, p, { exitCriterion: it.exitCriterion }));
+        audit('laboratorio', p.id, p.name, 'exitCriterion', '', it.exitCriterion, 'claude');
+        added.push({ title: 'Criterio de salida propuesto para ' + p.name });
+      }
     });
     if (done.length !== (cfg.inboxApplied || []).length) put('config', 'main', Object.assign({}, config(), { inboxApplied: done }));
     return added;

@@ -1829,17 +1829,45 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
     var names = fronts().map(function (f) { return f.name; });
     inbox.forEach(function (it) {
       if (done.indexOf(it.id) >= 0) return;
+      var kind = it.kind || 'task';
+      if (kind === 'patch' && !S.d.tasks[it.task]) return; // espera a que exista la actividad
       done.push(it.id);
-      if (S.d.tasks[it.id]) return;
-      var phase = phaseFor(it.due);
-      var t = {
-        id: it.id, title: it.title, phase: phase, order: DL.nextOrder(tasks(), phase),
-        front: names.indexOf(it.front) >= 0 ? it.front : (names[0] || ''), owner: it.owner || 'Tú', due: it.due || '',
-        status: 'pendiente', note: it.note || '', blockCause: '', doneAt: '', version: 1, updatedAt: now()
-      };
-      put('tasks', it.id, t);
-      audit('actividad', it.id, t.title, 'creada', '', t.title, 'claude');
-      added.push(t);
+      if (kind === 'task') {
+        if (S.d.tasks[it.id]) return;
+        var phase = phaseFor(it.due);
+        var t = {
+          id: it.id, title: it.title, phase: phase, order: DL.nextOrder(tasks(), phase),
+          front: names.indexOf(it.front) >= 0 ? it.front : (names[0] || ''), owner: it.owner || 'Tú', due: it.due || '',
+          status: 'pendiente', note: it.note || '', blockCause: '', doneAt: '', version: 1, updatedAt: now()
+        };
+        put('tasks', it.id, t);
+        audit('actividad', it.id, t.title, 'creada', '', t.title, 'claude');
+        added.push({ title: t.title });
+      } else if (kind === 'patch') {
+        var cur = S.d.tasks[it.task]; var patch = {};
+        if (it.status && cur.status !== 'hecha' && cur.status !== it.status) patch.status = it.status;
+        if (it.noteAppend && String(cur.note || '').indexOf(it.noteAppend) < 0) patch.note = (cur.note ? cur.note + '\n\n' : '') + it.noteAppend;
+        if (!Object.keys(patch).length) return;
+        updateTask(it.task, patch, { silent: true });
+        if (patch.status) audit('actividad', it.task, cur.title, 'estado', cur.status, patch.status, 'claude');
+        if (patch.note) audit('actividad', it.task, cur.title, 'nota', cur.note || '', patch.note, 'claude');
+        added.push({ title: 'Actualizada: ' + cur.title });
+      } else if (kind === 'agenda') {
+        var n = 0;
+        (it.items || []).forEach(function (a) {
+          if (S.d.agenda[a.id]) return;
+          var item = Object.assign({ done: false, doneAt: 0, createdAt: now(), updatedAt: now(), source: 'claude', taskId: '' }, a);
+          put('agenda', a.id, item); n++;
+          audit('agenda', a.id, item.title, 'creada', '', DL.fmtDate(item.date) + (item.time ? ' ' + DL.fmtTime(item.time) : ''), 'claude');
+        });
+        if (n) added.push({ title: it.summary || n + ' citas en la agenda' });
+      } else if (kind === 'lab') {
+        var p = S.d.lab[it.lab];
+        if (!p || String(p.exitCriterion || '').trim()) return;
+        put('lab', p.id, Object.assign({}, p, { exitCriterion: it.exitCriterion }));
+        audit('laboratorio', p.id, p.name, 'exitCriterion', '', it.exitCriterion, 'claude');
+        added.push({ title: 'Criterio de salida propuesto para ' + p.name });
+      }
     });
     if (done.length !== (cfg.inboxApplied || []).length) put('config', 'main', Object.assign({}, config(), { inboxApplied: done }));
     return added;
@@ -2382,7 +2410,7 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
       });
       h += col + '</div>';
     });
-    h += '</div></div><p class="hint">Fondo verde claro: jornada IKM de 8:00 a. m. a 5:00 p. m. (horario flexible). Comité financiero: una vez al mes, 4 horas; día por confirmar. Los bloques marcados como supuesto lo dicen en su nota.</p>';
+    h += '</div></div><p class="hint">Fondo verde claro: jornada IKM de 8:00 a. m. a 5:00 p. m. (horario flexible). Comité financiero IKM: segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. (está en la Agenda). Los bloques marcados como supuesto lo dicen en su nota.</p>';
     return h;
   }
   function toMin(t) { var p = t.split(':'); return +p[0] * 60 + +p[1]; }
@@ -2993,8 +3021,9 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
 
 ;
 /* Derrotero · pendientes registrados por Claude a partir de las conversaciones con David.
- * Se agregan una sola vez al plan (config.main.inboxApplied guarda cuáles ya entraron),
- * así que si David borra uno, no vuelve a aparecer. Sin datos inventados: lo que falta
+ * Cada entrada se aplica una sola vez (config.main.inboxApplied guarda cuáles ya entraron),
+ * así que si David borra o cambia algo, no se repite. Tipos: task (actividad nueva),
+ * patch (estado o nota de una actividad), agenda (citas) y lab (criterio de salida, solo si está vacío). Sin datos inventados: lo que falta
  * se marca como [DATO REQUERIDO] o [POR CONFIRMAR]. */
 (function (root) {
   'use strict';
@@ -3009,7 +3038,28 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
     { id: 'cv04', title: 'Escribir el criterio de salida de Berry Lab', front: 'Laboratorio', owner: 'Tú', due: '',
       note: '[DATO REQUERIDO] Qué tiene que pasar para decidir si sigue, se pausa o se vuelve negocio. Se escribe también en Laboratorio. ' + FUENTE },
     { id: 'cv05', title: 'Revisar si publicar el calendario de Outlook de IKM encaja con la política de seguridad; si no, dejar de publicarlo y generar un enlace nuevo', front: 'IKM', owner: 'Tú', due: '',
-      note: 'El enlace secreto del calendario quedó en la conversación con Claude. Si se vuelve a publicar, pásale el enlace nuevo a Claude para actualizar Vercel. ' + FUENTE }
+      note: 'El enlace secreto del calendario quedó en la conversación con Claude. Si se vuelve a publicar, pásale el enlace nuevo a Claude para actualizar Vercel. ' + FUENTE },
+    // ── 28 sep 2026, segunda parte: respuestas de David ──
+    { id: 'cv06', kind: 'patch', task: 'cv01', status: 'en curso',
+      noteAppend: '28 sep: cifra de "más ventas" ≈ $1.000 millones. [POR CONFIRMAR] En qué periodo se mide y si son ventas firmadas o facturadas. Falta el esquema de la deuda [DATO REQUERIDO].' },
+    { id: 'cv07', kind: 'patch', task: 'cv02', status: 'hecha',
+      noteAppend: '28 sep: segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Quedó en la agenda de oct 2026 a jun 2027 con aviso un día antes.' },
+    { id: 'cv08', kind: 'agenda', summary: 'Comité financiero IKM: segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. (9 fechas en la agenda)',
+      items: ['2026-10-13', '2026-11-10', '2026-12-08', '2027-01-12', '2027-02-09', '2027-03-09', '2027-04-13', '2027-05-11', '2027-06-08'].map(function (d) {
+        return { id: 'cf-' + d, title: 'Comité financiero IKM', date: d, time: '09:00', durationMin: 240, remindMin: 1440, front: 'IKM', note: 'Segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. ' + FUENTE };
+      }) },
+    { id: 'cv09', kind: 'lab', lab: 'zonal',
+      exitCriterion: 'Propuesta de Claude (ajústala): al 31 mar 2027 → Se vuelve negocio si 30 corredores la usan 2 semanas seguidas y 10 dicen que pagarían; Sigue un trimestre más con 10 a 29 corredores activos; Se pausa con menos de 10 o si no hay versión mínima al 15 mar.' },
+    { id: 'cv10', kind: 'patch', task: 'cv03', status: 'en curso',
+      noteAppend: '28 sep: David pidió ayuda. Claude dejó una propuesta de criterio en Laboratorio → ZONAL. Revísala y ajusta los números.' },
+    { id: 'cv11', kind: 'lab', lab: 'berry',
+      exitCriterion: 'Propuesta de Claude (ajústala): al cierre de los 4 fines de semana de preventa → Se vuelve negocio con 60 pedidos pagados, 30 % de clientes que repiten y margen bruto de 50 % o más (después de la cocina por horas); Sigue un trimestre con 25 a 59 pedidos o margen entre 35 y 50 %; Se pausa con menos de 25 pedidos o margen bajo 35 %.' },
+    { id: 'cv12', kind: 'patch', task: 'cv04', status: 'en curso',
+      noteAppend: '28 sep: David pidió ayuda. Claude dejó una propuesta de criterio en Laboratorio. El nombre "Berry Lab" ya existe: ver la actividad del nombre nuevo.' },
+    { id: 'cv13', title: 'Elegir el nombre nuevo del laboratorio de postres ("Berry Lab" ya existe) y verificarlo en la SIC, dominio .co e Instagram', front: 'Laboratorio', owner: 'Tú', due: '2027-03-15',
+      note: 'Opciones de Claude, en el estilo de ZONAL: MORALEJA (mora + moraleja; recomendada: se recuerda y cuenta una historia), BAYA (berry en español, corta y directa), AGRIDULCE (el sabor de los frutos rojos), OCULTA (viene de cocina oculta; exclusiva, por preventa). [SUPUESTO DECLARADO] Fecha: dos semanas antes de que empiece su trimestre (abr 2027). ' + FUENTE },
+    { id: 'cv14', kind: 'patch', task: 'cv05',
+      noteAppend: '28 sep: David decide seguir con el calendario de IKM mientras confirma la política.' }
   ];
 })(window);
 
@@ -3362,7 +3412,7 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
 
   function announceInbox(added) {
     if (!added || !added.length) return;
-    toast({ kicker: 'Registrado por Claude', title: added.length === 1 ? 'Un pendiente nuevo de la conversación' : added.length + ' pendientes nuevos de la conversación', text: added.map(function (t) { return '· ' + t.title; }).join('\n') });
+    toast({ kicker: 'Registrado por Claude', title: added.length === 1 ? 'Un cambio de la conversación' : added.length + ' cambios de la conversación', text: added.slice(0, 8).map(function (t) { return '· ' + t.title; }).join('\n') + (added.length > 8 ? '\n+' + (added.length - 8) + ' más' : '') });
   }
 
   // ───────────── clics ─────────────
