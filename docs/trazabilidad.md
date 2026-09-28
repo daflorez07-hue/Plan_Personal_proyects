@@ -36,8 +36,8 @@ RF-01, RF-02 y RF-04 a RF-12: implementados. RF-03: retirado en v2. RF-13 y RF-1
 - **Google Calendar:** el enlace crea el evento con el aviso predeterminado de tu calendario; el `.ics` sí lleva el aviso exacto que elegiste.
 
 ## Decisiones que necesito de David
-1. `[DATO REQUERIDO]` Cifra de "más ventas" y esquema de la deuda (criterios medibles), antes del 11 ene 2027. Se escriben en las notas de la actividad "Revisión 1 con IKM" (el módulo Puntos de control se retiró a pedido de David el 28 sep 2026).
-2. `[POR CONFIRMAR]` Día del comité financiero mensual (4 horas) para la semana tipo.
+1. Cifra de "más ventas": ≈ $1.000 millones (28 sep). `[POR CONFIRMAR]` periodo y si son ventas firmadas o facturadas. `[DATO REQUERIDO]` Esquema de la deuda, antes del 11 ene 2027. Se escriben en las notas de la actividad "Revisión 1 con IKM" (el módulo Puntos de control se retiró a pedido de David el 28 sep 2026).
+2. Comité financiero: segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. (28 sep). Quedó en la agenda de oct 2026 a jun 2027.
 3. `[SUPUESTO DECLARADO]` Fechas de inicio y fin de cada etapa, duración del gimnasio (1 h), del comité de socios (1 h) y horario del bloque de familia del sábado. Editables en Ajustes y Semana tipo.
-4. `[DATO REQUERIDO]` Criterio de salida de ZONAL y de Berry Lab.
+4. Criterios de salida de ZONAL y del laboratorio de postres: propuesta de Claude en Laboratorio, pendiente de ajuste por David. "Berry Lab" ya existe: opciones de nombre en la actividad cv13.
 5. Base de datos en Vercel: conectar Neon (Storage → Create Database) y escribir `CALENDAR_ICS_URL`. Ambas se configuran en Vercel; ninguna credencial pasa por el repositorio.

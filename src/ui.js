@@ -506,7 +506,7 @@
       });
       h += col + '</div>';
     });
-    h += '</div></div><p class="hint">Fondo verde claro: jornada IKM de 8:00 a. m. a 5:00 p. m. (horario flexible). Comité financiero: una vez al mes, 4 horas; día por confirmar. Los bloques marcados como supuesto lo dicen en su nota.</p>';
+    h += '</div></div><p class="hint">Fondo verde claro: jornada IKM de 8:00 a. m. a 5:00 p. m. (horario flexible). Comité financiero IKM: segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. (está en la Agenda). Los bloques marcados como supuesto lo dicen en su nota.</p>';
     return h;
   }
   function toMin(t) { var p = t.split(':'); return +p[0] * 60 + +p[1]; }
