@@ -41,7 +41,7 @@ src/remote.js     cliente de /api/db con la misma forma que la base del artefact
 src/store.js      estado, escritura en cola, bitácora, respaldo diario, migración desde el navegador
 src/ui.js         vistas
 src/dash.js       tablero de Hoy: camino del plan e indicadores gráficos
-src/inbox.js      pendientes que Claude registra desde las conversaciones (entran una sola vez)
+data/bandeja.json cambios que Claude registra desde el chat: datos, no código (entran una sola vez)
 src/app.js        eventos, agenda por voz, recordatorios, ayudas emergentes, exportaciones
 src/styles.css    sistema visual de la marca personal
 build.js          genera dist/derrotero.html (artefacto) y dist/web/index.html (Vercel)

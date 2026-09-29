@@ -41,3 +41,9 @@ RF-01, RF-02 y RF-04 a RF-12: implementados. RF-03: retirado en v2. RF-13 y RF-1
 3. `[SUPUESTO DECLARADO]` Fechas de inicio y fin de cada etapa, duración del gimnasio (1 h), del comité de socios (1 h) y horario del bloque de familia del sábado. Editables en Ajustes y Semana tipo.
 4. Criterios de salida de ZONAL y de MORALEJA (antes Berry Lab): aprobados por David el 28 sep. Falta verificar que MORALEJA esté libre en la SIC, dominio .co e Instagram.
 5. Base de datos en Vercel: conectar Neon (Storage → Create Database) y escribir `CALENDAR_ICS_URL`. Ambas se configuran en Vercel; ninguna credencial pasa por el repositorio.
+
+
+## v3 · 29 sep 2026 · Claude como "manos" dentro de la app
+- Los cambios pedidos por chat pasan a ser **datos**, no código: `data/bandeja.json` (antes `src/inbox.js`). El procedimiento está en `CLAUDE.md`.
+- La bandeja ahora también puede **quitar** actividades o citas, **cambiar fechas** y **cambiar de frente**. Todo queda en la bitácora con autor `claude`.
+- Nueva actividad (cv21): crear la compañía propia (liviana, de bajo costo, con representación legal), frente Negocio propio, meta 2 oct 2026. El tipo de sociedad y el costo quedan [POR CONFIRMAR].

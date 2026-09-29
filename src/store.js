@@ -351,13 +351,17 @@
         added.push({ title: t.title });
       } else if (kind === 'patch') {
         var cur = S.d.tasks[it.task]; var patch = {};
-        if (it.status && cur.status !== 'hecha' && cur.status !== it.status) patch.status = it.status;
+        if (it.status && (cur.status !== 'hecha' || it.reopen) && cur.status !== it.status) patch.status = it.status;
         if (it.title && cur.title === it.titleFrom) patch.title = it.title;
+        if ('due' in it && cur.due !== it.due && (!('dueFrom' in it) || cur.due === it.dueFrom)) { patch.due = it.due; patch.phase = phaseFor(it.due); }
+        if (it.front && names.indexOf(it.front) >= 0 && cur.front !== it.front) patch.front = it.front;
         if (it.noteAppend && String(cur.note || '').indexOf(it.noteAppend) < 0) patch.note = (cur.note ? cur.note + '\n\n' : '') + it.noteAppend;
         if (!Object.keys(patch).length) return;
         updateTask(it.task, patch, { silent: true });
         if (patch.status) audit('actividad', it.task, cur.title, 'estado', cur.status, patch.status, 'claude');
         if (patch.title) audit('actividad', it.task, cur.title, 'título', cur.title, patch.title, 'claude');
+        if ('due' in patch) audit('actividad', it.task, cur.title, 'fecha', cur.due || '', patch.due, 'claude');
+        if (patch.front) audit('actividad', it.task, cur.title, 'frente', cur.front || '', patch.front, 'claude');
         if (patch.note) audit('actividad', it.task, cur.title, 'nota', cur.note || '', patch.note, 'claude');
         added.push({ title: 'Actualizada: ' + (patch.title || cur.title) });
       } else if (kind === 'agenda') {
@@ -369,6 +373,19 @@
           audit('agenda', a.id, item.title, 'creada', '', DL.fmtDate(item.date) + (item.time ? ' ' + DL.fmtTime(item.time) : ''), 'claude');
         });
         if (n) added.push({ title: it.summary || n + ' citas en la agenda' });
+      } else if (kind === 'remove') {
+        if (it.task && S.d.tasks[it.task]) {
+          var gone = S.d.tasks[it.task];
+          audit('actividad', it.task, gone.title, 'eliminada', gone.title, '', 'claude');
+          remove('tasks', it.task);
+          added.push({ title: 'Quitada: ' + gone.title });
+        }
+        if (it.agenda && S.d.agenda[it.agenda]) {
+          var ga = S.d.agenda[it.agenda];
+          audit('agenda', it.agenda, ga.title, 'eliminada', ga.title, '', 'claude');
+          remove('agenda', it.agenda);
+          added.push({ title: 'Quitada de la agenda: ' + ga.title });
+        }
       } else if (kind === 'lab') {
         var p = S.d.lab[it.lab]; if (!p) return;
         var lp = {}; var crit = String(p.exitCriterion || '').trim();

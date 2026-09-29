@@ -22,12 +22,12 @@ const SHOTS = process.env.SHOTS;
   await page.waitForSelector('.toast >> text=Registrado por Claude', { timeout: 5000 });
   await page.evaluate(() => document.querySelectorAll('[data-act="toast-close"]').forEach((b) => b.click()));
   const stats = await page.textContent('.dash');
-  assert.match(stats, /17\s*%/); assert.match(stats, /6\/35 hechas/);
+  assert.match(stats, /17\s*%/); assert.match(stats, /6\/36 hechas/);
   assert.ok(await page.locator('svg.road-svg #walker').count() === 1, 'quien camina está en el camino');
   assert.ok(await page.locator('svg.road-svg .rd-hit').count() >= 10, 'hitos del plan sobre el camino');
   if (SHOTS) await page.screenshot({ path: SHOTS + '/hoy-desktop.png', fullPage: true });
   await page.click('.side [data-route="actividades"]');
-  assert.equal(await page.locator('.trow').count(), 35);
+  assert.equal(await page.locator('.trow').count(), 36);
   assert.equal(await page.locator('#task-cv01').count(), 1, 'pendientes de la conversación registrados');
   const lab = await page.evaluate(() => JSON.parse(localStorage.getItem('derrotero-local-v1')).lab);
   assert.match(lab.zonal.exitCriterion, /^al 31 mar 2027/);
@@ -35,7 +35,7 @@ const SHOTS = process.env.SHOTS;
   assert.match(lab.berry.exitCriterion, /^al cierre de los 4 fines/);
   const cf = await page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('derrotero-local-v1')).agenda).filter((k) => k.indexOf('cf-') === 0).length);
   assert.equal(cf, 9);
-  ok('criterio 1: 29 actividades base + lo registrado de la conversación (35, comité en agenda, criterios propuestos)');
+  ok('criterio 1: 29 actividades base + lo registrado de la conversación (36, comité en agenda, criterios propuestos)');
 
   // 2. ciclo de estado + bitácora
   await page.click('#task-t04 .st-btn');
