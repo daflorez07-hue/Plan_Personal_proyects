@@ -201,3 +201,19 @@ test('resumen semanal', () => {
   assert.match(txt, /Llamar a Cristian \[agenda\]/);
   assert.doesNotMatch(txt, /PUNTOS DE CONTROL/);
 });
+
+test('bandeja de Claude: datos válidos (ids únicos, tipos conocidos, referencias existentes)', () => {
+  const bandeja = require('../data/bandeja.json');
+  const ids = bandeja.map((e) => e.id);
+  assert.equal(new Set(ids).size, ids.length, 'ids repetidos');
+  const frentes = Object.values(seed.config.fronts).map((f) => f.name);
+  const taskIds = new Set(Object.keys(seed.tasks));
+  bandeja.forEach((e) => {
+    const kind = e.kind || 'task';
+    assert.ok(['task', 'patch', 'agenda', 'lab', 'remove'].includes(kind), e.id + ': tipo desconocido');
+    if (kind === 'task') { assert.ok(e.title && frentes.includes(e.front), e.id + ': título o frente'); taskIds.add(e.id); }
+    if (kind === 'patch' || (kind === 'remove' && e.task)) assert.ok(taskIds.has(e.task), e.id + ': la actividad ' + e.task + ' no existe');
+    if (e.due) assert.match(e.due, /^\d{4}-\d{2}-\d{2}$/);
+    if (kind === 'lab') assert.ok(seed.lab[e.lab], e.id + ': laboratorio');
+  });
+});

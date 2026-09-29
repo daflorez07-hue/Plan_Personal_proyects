@@ -2,7 +2,9 @@
 const fs = require('fs');
 const r = (p) => fs.readFileSync(__dirname + '/' + p, 'utf8');
 const seed = JSON.stringify(JSON.parse(r('data/seed.json'))).replace(/<\//g, '<\\/');
-const js = ['src/logic.js', 'src/remote.js', 'src/store.js', 'src/ui.js', 'src/dash.js', 'src/inbox.js', 'src/app.js'].map(r).join('\n;\n').replace(/<\/script/gi, '<\\/script');
+// Bandeja: cambios que Claude registra desde el chat. Son datos, no código (data/bandeja.json).
+const bandeja = 'window.DERROTERO_INBOX = ' + JSON.stringify(JSON.parse(r('data/bandeja.json'))) + ';';
+const js = ['src/logic.js', 'src/remote.js', 'src/store.js', 'src/ui.js', 'src/dash.js'].map(r).concat([bandeja, r('src/app.js')]).join('\n;\n').replace(/<\/script/gi, '<\\/script');
 const html = r('src/shell.html')
   .replace('/*__CSS__*/', () => r('src/styles.css'))
   .replace('/*__SEED__*/', () => seed)

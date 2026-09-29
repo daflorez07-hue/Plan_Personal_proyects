@@ -1845,13 +1845,17 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
         added.push({ title: t.title });
       } else if (kind === 'patch') {
         var cur = S.d.tasks[it.task]; var patch = {};
-        if (it.status && cur.status !== 'hecha' && cur.status !== it.status) patch.status = it.status;
+        if (it.status && (cur.status !== 'hecha' || it.reopen) && cur.status !== it.status) patch.status = it.status;
         if (it.title && cur.title === it.titleFrom) patch.title = it.title;
+        if ('due' in it && cur.due !== it.due && (!('dueFrom' in it) || cur.due === it.dueFrom)) { patch.due = it.due; patch.phase = phaseFor(it.due); }
+        if (it.front && names.indexOf(it.front) >= 0 && cur.front !== it.front) patch.front = it.front;
         if (it.noteAppend && String(cur.note || '').indexOf(it.noteAppend) < 0) patch.note = (cur.note ? cur.note + '\n\n' : '') + it.noteAppend;
         if (!Object.keys(patch).length) return;
         updateTask(it.task, patch, { silent: true });
         if (patch.status) audit('actividad', it.task, cur.title, 'estado', cur.status, patch.status, 'claude');
         if (patch.title) audit('actividad', it.task, cur.title, 'título', cur.title, patch.title, 'claude');
+        if ('due' in patch) audit('actividad', it.task, cur.title, 'fecha', cur.due || '', patch.due, 'claude');
+        if (patch.front) audit('actividad', it.task, cur.title, 'frente', cur.front || '', patch.front, 'claude');
         if (patch.note) audit('actividad', it.task, cur.title, 'nota', cur.note || '', patch.note, 'claude');
         added.push({ title: 'Actualizada: ' + (patch.title || cur.title) });
       } else if (kind === 'agenda') {
@@ -1863,6 +1867,19 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
           audit('agenda', a.id, item.title, 'creada', '', DL.fmtDate(item.date) + (item.time ? ' ' + DL.fmtTime(item.time) : ''), 'claude');
         });
         if (n) added.push({ title: it.summary || n + ' citas en la agenda' });
+      } else if (kind === 'remove') {
+        if (it.task && S.d.tasks[it.task]) {
+          var gone = S.d.tasks[it.task];
+          audit('actividad', it.task, gone.title, 'eliminada', gone.title, '', 'claude');
+          remove('tasks', it.task);
+          added.push({ title: 'Quitada: ' + gone.title });
+        }
+        if (it.agenda && S.d.agenda[it.agenda]) {
+          var ga = S.d.agenda[it.agenda];
+          audit('agenda', it.agenda, ga.title, 'eliminada', ga.title, '', 'claude');
+          remove('agenda', it.agenda);
+          added.push({ title: 'Quitada de la agenda: ' + ga.title });
+        }
       } else if (kind === 'lab') {
         var p = S.d.lab[it.lab]; if (!p) return;
         var lp = {}; var crit = String(p.exitCriterion || '').trim();
@@ -3025,64 +3042,7 @@ pre.summary { margin: 0; white-space: pre-wrap; font: 400 14px/1.6 var(--tipo-mo
 })(window);
 
 ;
-/* Derrotero · pendientes registrados por Claude a partir de las conversaciones con David.
- * Cada entrada se aplica una sola vez (config.main.inboxApplied guarda cuáles ya entraron),
- * así que si David borra o cambia algo, no se repite. Tipos: task (actividad nueva),
- * patch (estado, nota o título de una actividad; el título solo si no lo han cambiado), agenda (citas)
- * y lab (nombre y criterio de salida; solo reemplaza lo que Claude mismo había propuesto o lo vacío). Sin datos inventados: lo que falta
- * se marca como [DATO REQUERIDO] o [POR CONFIRMAR]. */
-(function (root) {
-  'use strict';
-  var FUENTE = 'Registrado por Claude a partir de la conversación del 28 sep 2026.';
-  var PROPUESTA = 'Propuesta de Claude (ajústala): ';
-  var ZONAL_CRIT = 'al 31 mar 2027 → Se vuelve negocio si 30 corredores la usan 2 semanas seguidas y 10 dicen que pagarían; Sigue un trimestre más con 10 a 29 corredores activos; Se pausa con menos de 10 o si no hay versión mínima al 15 mar.';
-  var POSTRES_CRIT = 'al cierre de los 4 fines de semana de preventa → Se vuelve negocio con 60 pedidos pagados, 30 % de clientes que repiten y margen bruto de 50 % o más (después de la cocina por horas); Sigue un trimestre con 25 a 59 pedidos o margen entre 35 y 50 %; Se pausa con menos de 25 pedidos o margen bajo 35 %.';
-  var NOMBRE_TAREA = 'Elegir el nombre nuevo del laboratorio de postres ("Berry Lab" ya existe) y verificarlo en la SIC, dominio .co e Instagram';
-  root.DERROTERO_INBOX = [
-    { id: 'cv01', title: 'Definir la cifra de "más ventas" y el esquema de la deuda (criterios medibles de la revisión con IKM)', front: 'IKM', owner: 'Tú', due: '2027-01-11',
-      note: '[DATO REQUERIDO] Sin estos números la Revisión 1 con IKM (15 ene) no se puede evaluar. ' + FUENTE },
-    { id: 'cv02', title: 'Confirmar el día del comité financiero mensual (4 horas) y bloquearlo en la semana tipo', front: 'IKM', owner: 'Tú', due: '',
-      note: '[POR CONFIRMAR] Día y hora del comité. ' + FUENTE },
-    { id: 'cv03', title: 'Escribir el criterio de salida de ZONAL', front: 'Laboratorio', owner: 'Tú', due: '',
-      note: '[DATO REQUERIDO] Qué tiene que pasar para decidir si sigue, se pausa o se vuelve negocio. Se escribe también en Laboratorio. ' + FUENTE },
-    { id: 'cv04', title: 'Escribir el criterio de salida de Berry Lab', front: 'Laboratorio', owner: 'Tú', due: '',
-      note: '[DATO REQUERIDO] Qué tiene que pasar para decidir si sigue, se pausa o se vuelve negocio. Se escribe también en Laboratorio. ' + FUENTE },
-    { id: 'cv05', title: 'Revisar si publicar el calendario de Outlook de IKM encaja con la política de seguridad; si no, dejar de publicarlo y generar un enlace nuevo', front: 'IKM', owner: 'Tú', due: '',
-      note: 'El enlace secreto del calendario quedó en la conversación con Claude. Si se vuelve a publicar, pásale el enlace nuevo a Claude para actualizar Vercel. ' + FUENTE },
-    // ── 28 sep 2026, segunda parte: respuestas de David ──
-    { id: 'cv06', kind: 'patch', task: 'cv01', status: 'en curso',
-      noteAppend: '28 sep: cifra de "más ventas" ≈ $1.000 millones. [POR CONFIRMAR] En qué periodo se mide y si son ventas firmadas o facturadas. Falta el esquema de la deuda [DATO REQUERIDO].' },
-    { id: 'cv07', kind: 'patch', task: 'cv02', status: 'hecha',
-      noteAppend: '28 sep: segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Quedó en la agenda de oct 2026 a jun 2027 con aviso un día antes.' },
-    { id: 'cv08', kind: 'agenda', summary: 'Comité financiero IKM: segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. (9 fechas en la agenda)',
-      items: ['2026-10-13', '2026-11-10', '2026-12-08', '2027-01-12', '2027-02-09', '2027-03-09', '2027-04-13', '2027-05-11', '2027-06-08'].map(function (d) {
-        return { id: 'cf-' + d, title: 'Comité financiero IKM', date: d, time: '09:00', durationMin: 240, remindMin: 1440, front: 'IKM', note: 'Segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. ' + FUENTE };
-      }) },
-    { id: 'cv09', kind: 'lab', lab: 'zonal',
-      exitCriterion: PROPUESTA + ZONAL_CRIT },
-    { id: 'cv10', kind: 'patch', task: 'cv03', status: 'en curso',
-      noteAppend: '28 sep: David pidió ayuda. Claude dejó una propuesta de criterio en Laboratorio → ZONAL. Revísala y ajusta los números.' },
-    { id: 'cv11', kind: 'lab', lab: 'berry',
-      exitCriterion: PROPUESTA + POSTRES_CRIT },
-    { id: 'cv12', kind: 'patch', task: 'cv04', status: 'en curso',
-      noteAppend: '28 sep: David pidió ayuda. Claude dejó una propuesta de criterio en Laboratorio. El nombre "Berry Lab" ya existe: ver la actividad del nombre nuevo.' },
-    { id: 'cv13', title: NOMBRE_TAREA, front: 'Laboratorio', owner: 'Tú', due: '2027-03-15',
-      note: 'Opciones de Claude, en el estilo de ZONAL: MORALEJA (mora + moraleja; recomendada: se recuerda y cuenta una historia), BAYA (berry en español, corta y directa), AGRIDULCE (el sabor de los frutos rojos), OCULTA (viene de cocina oculta; exclusiva, por preventa). [SUPUESTO DECLARADO] Fecha: dos semanas antes de que empiece su trimestre (abr 2027). ' + FUENTE },
-    { id: 'cv14', kind: 'patch', task: 'cv05',
-      noteAppend: '28 sep: David decide seguir con el calendario de IKM mientras confirma la política.' }
-,
-    // ── 28 sep 2026, tercera parte: David elige MORALEJA y aprueba los criterios ──
-    { id: 'cv15', kind: 'lab', lab: 'berry', nameFrom: 'Berry Lab', name: 'MORALEJA', replaceFrom: PROPUESTA + POSTRES_CRIT, exitCriterion: POSTRES_CRIT },
-    { id: 'cv16', kind: 'lab', lab: 'zonal', replaceFrom: PROPUESTA + ZONAL_CRIT, exitCriterion: ZONAL_CRIT },
-    { id: 'cv17', kind: 'patch', task: 'cv03', status: 'hecha', noteAppend: '28 sep: David aprueba el criterio de salida de ZONAL.' },
-    { id: 'cv18', kind: 'patch', task: 'cv04', status: 'hecha', titleFrom: 'Escribir el criterio de salida de Berry Lab', title: 'Escribir el criterio de salida de MORALEJA',
-      noteAppend: '28 sep: David aprueba el criterio de salida y elige el nombre MORALEJA.' },
-    { id: 'cv19', kind: 'patch', task: 'cv13', status: 'en curso', titleFrom: NOMBRE_TAREA, title: 'Verificar que MORALEJA esté libre en la SIC, dominio .co e Instagram',
-      noteAppend: '28 sep: David elige MORALEJA. Falta verificar que esté libre antes de usarlo.' },
-    { id: 'cv20', kind: 'patch', task: 't29', titleFrom: 'Berry Lab: 4 fines de semana de preventa', title: 'MORALEJA: 4 fines de semana de preventa' }
-  ];
-})(window);
-
+window.DERROTERO_INBOX = [{"id":"cv01","title":"Definir la cifra de \"más ventas\" y el esquema de la deuda (criterios medibles de la revisión con IKM)","front":"IKM","owner":"Tú","due":"2027-01-11","note":"[DATO REQUERIDO] Sin estos números la Revisión 1 con IKM (15 ene) no se puede evaluar. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cv02","title":"Confirmar el día del comité financiero mensual (4 horas) y bloquearlo en la semana tipo","front":"IKM","owner":"Tú","due":"","note":"[POR CONFIRMAR] Día y hora del comité. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cv03","title":"Escribir el criterio de salida de ZONAL","front":"Laboratorio","owner":"Tú","due":"","note":"[DATO REQUERIDO] Qué tiene que pasar para decidir si sigue, se pausa o se vuelve negocio. Se escribe también en Laboratorio. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cv04","title":"Escribir el criterio de salida de Berry Lab","front":"Laboratorio","owner":"Tú","due":"","note":"[DATO REQUERIDO] Qué tiene que pasar para decidir si sigue, se pausa o se vuelve negocio. Se escribe también en Laboratorio. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cv05","title":"Revisar si publicar el calendario de Outlook de IKM encaja con la política de seguridad; si no, dejar de publicarlo y generar un enlace nuevo","front":"IKM","owner":"Tú","due":"","note":"El enlace secreto del calendario quedó en la conversación con Claude. Si se vuelve a publicar, pásale el enlace nuevo a Claude para actualizar Vercel. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cv06","kind":"patch","task":"cv01","status":"en curso","noteAppend":"28 sep: cifra de \"más ventas\" ≈ $1.000 millones. [POR CONFIRMAR] En qué periodo se mide y si son ventas firmadas o facturadas. Falta el esquema de la deuda [DATO REQUERIDO]."},{"id":"cv07","kind":"patch","task":"cv02","status":"hecha","noteAppend":"28 sep: segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Quedó en la agenda de oct 2026 a jun 2027 con aviso un día antes."},{"id":"cv08","kind":"agenda","summary":"Comité financiero IKM: segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. (9 fechas en la agenda)","items":[{"id":"cf-2026-10-13","title":"Comité financiero IKM","date":"2026-10-13","time":"09:00","durationMin":240,"remindMin":1440,"front":"IKM","note":"Segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cf-2026-11-10","title":"Comité financiero IKM","date":"2026-11-10","time":"09:00","durationMin":240,"remindMin":1440,"front":"IKM","note":"Segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cf-2026-12-08","title":"Comité financiero IKM","date":"2026-12-08","time":"09:00","durationMin":240,"remindMin":1440,"front":"IKM","note":"Segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cf-2027-01-12","title":"Comité financiero IKM","date":"2027-01-12","time":"09:00","durationMin":240,"remindMin":1440,"front":"IKM","note":"Segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cf-2027-02-09","title":"Comité financiero IKM","date":"2027-02-09","time":"09:00","durationMin":240,"remindMin":1440,"front":"IKM","note":"Segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cf-2027-03-09","title":"Comité financiero IKM","date":"2027-03-09","time":"09:00","durationMin":240,"remindMin":1440,"front":"IKM","note":"Segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cf-2027-04-13","title":"Comité financiero IKM","date":"2027-04-13","time":"09:00","durationMin":240,"remindMin":1440,"front":"IKM","note":"Segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cf-2027-05-11","title":"Comité financiero IKM","date":"2027-05-11","time":"09:00","durationMin":240,"remindMin":1440,"front":"IKM","note":"Segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cf-2027-06-08","title":"Comité financiero IKM","date":"2027-06-08","time":"09:00","durationMin":240,"remindMin":1440,"front":"IKM","note":"Segundo martes de cada mes, 9:00 a. m. – 1:00 p. m. Registrado por Claude a partir de la conversación del 28 sep 2026."}]},{"id":"cv09","kind":"lab","lab":"zonal","exitCriterion":"Propuesta de Claude (ajústala): al 31 mar 2027 → Se vuelve negocio si 30 corredores la usan 2 semanas seguidas y 10 dicen que pagarían; Sigue un trimestre más con 10 a 29 corredores activos; Se pausa con menos de 10 o si no hay versión mínima al 15 mar."},{"id":"cv10","kind":"patch","task":"cv03","status":"en curso","noteAppend":"28 sep: David pidió ayuda. Claude dejó una propuesta de criterio en Laboratorio → ZONAL. Revísala y ajusta los números."},{"id":"cv11","kind":"lab","lab":"berry","exitCriterion":"Propuesta de Claude (ajústala): al cierre de los 4 fines de semana de preventa → Se vuelve negocio con 60 pedidos pagados, 30 % de clientes que repiten y margen bruto de 50 % o más (después de la cocina por horas); Sigue un trimestre con 25 a 59 pedidos o margen entre 35 y 50 %; Se pausa con menos de 25 pedidos o margen bajo 35 %."},{"id":"cv12","kind":"patch","task":"cv04","status":"en curso","noteAppend":"28 sep: David pidió ayuda. Claude dejó una propuesta de criterio en Laboratorio. El nombre \"Berry Lab\" ya existe: ver la actividad del nombre nuevo."},{"id":"cv13","title":"Elegir el nombre nuevo del laboratorio de postres (\"Berry Lab\" ya existe) y verificarlo en la SIC, dominio .co e Instagram","front":"Laboratorio","owner":"Tú","due":"2027-03-15","note":"Opciones de Claude, en el estilo de ZONAL: MORALEJA (mora + moraleja; recomendada: se recuerda y cuenta una historia), BAYA (berry en español, corta y directa), AGRIDULCE (el sabor de los frutos rojos), OCULTA (viene de cocina oculta; exclusiva, por preventa). [SUPUESTO DECLARADO] Fecha: dos semanas antes de que empiece su trimestre (abr 2027). Registrado por Claude a partir de la conversación del 28 sep 2026."},{"id":"cv14","kind":"patch","task":"cv05","noteAppend":"28 sep: David decide seguir con el calendario de IKM mientras confirma la política."},{"id":"cv15","kind":"lab","lab":"berry","nameFrom":"Berry Lab","name":"MORALEJA","replaceFrom":"Propuesta de Claude (ajústala): al cierre de los 4 fines de semana de preventa → Se vuelve negocio con 60 pedidos pagados, 30 % de clientes que repiten y margen bruto de 50 % o más (después de la cocina por horas); Sigue un trimestre con 25 a 59 pedidos o margen entre 35 y 50 %; Se pausa con menos de 25 pedidos o margen bajo 35 %.","exitCriterion":"al cierre de los 4 fines de semana de preventa → Se vuelve negocio con 60 pedidos pagados, 30 % de clientes que repiten y margen bruto de 50 % o más (después de la cocina por horas); Sigue un trimestre con 25 a 59 pedidos o margen entre 35 y 50 %; Se pausa con menos de 25 pedidos o margen bajo 35 %."},{"id":"cv16","kind":"lab","lab":"zonal","replaceFrom":"Propuesta de Claude (ajústala): al 31 mar 2027 → Se vuelve negocio si 30 corredores la usan 2 semanas seguidas y 10 dicen que pagarían; Sigue un trimestre más con 10 a 29 corredores activos; Se pausa con menos de 10 o si no hay versión mínima al 15 mar.","exitCriterion":"al 31 mar 2027 → Se vuelve negocio si 30 corredores la usan 2 semanas seguidas y 10 dicen que pagarían; Sigue un trimestre más con 10 a 29 corredores activos; Se pausa con menos de 10 o si no hay versión mínima al 15 mar."},{"id":"cv17","kind":"patch","task":"cv03","status":"hecha","noteAppend":"28 sep: David aprueba el criterio de salida de ZONAL."},{"id":"cv18","kind":"patch","task":"cv04","status":"hecha","titleFrom":"Escribir el criterio de salida de Berry Lab","title":"Escribir el criterio de salida de MORALEJA","noteAppend":"28 sep: David aprueba el criterio de salida y elige el nombre MORALEJA."},{"id":"cv19","kind":"patch","task":"cv13","status":"en curso","titleFrom":"Elegir el nombre nuevo del laboratorio de postres (\"Berry Lab\" ya existe) y verificarlo en la SIC, dominio .co e Instagram","title":"Verificar que MORALEJA esté libre en la SIC, dominio .co e Instagram","noteAppend":"28 sep: David elige MORALEJA. Falta verificar que esté libre antes de usarlo."},{"id":"cv20","kind":"patch","task":"t29","titleFrom":"Berry Lab: 4 fines de semana de preventa","title":"MORALEJA: 4 fines de semana de preventa"},{"id":"cv21","title":"Crear la compañía propia (liviana y de bajo costo) para tener representación legal","front":"Negocio propio","owner":"Tú","due":"2026-10-02","note":"Meta: dejarla radicada esta semana. Lo más liviano en Colombia suele ser una SAS de un solo accionista, creada por documento privado ante la Cámara de Comercio (se puede hacer en línea). Tú quedas como representante legal. [POR CONFIRMAR] Tipo de sociedad y costo: depende sobre todo del capital que declares. [DATO REQUERIDO] Nombre, objeto social, capital y domicilio. Después: RUT/NIT y cuenta bancaria. El cómo lo definimos en el chat. Registrado por Claude a partir de la conversación del 29 sep 2026."}];
 ;
 /* Derrotero · controlador: eventos, render, agenda por voz, recordatorios y exportaciones. */
 (function (root) {
